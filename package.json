@@ -1,6 +1,6 @@
 {
-  "name": "good-bases",
-  "version": "0.5.3",
+  "name": "extended-base",
+  "version": "1.0.0",
   "description": "A Bases table view styled to match Notion databases: hover UI, OPEN buttons, and colored tag pills.",
   "main": "main.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "bases",
     "notion"
   ],
-  "author": "UmbertoFrancesco",
+  "author": "Lucy Roh",
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.28.0",

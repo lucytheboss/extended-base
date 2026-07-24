@@ -1,10 +1,10 @@
 {
-	"id": "good-bases",
-	"name": "GoodBases",
-	"version": "0.5.3",
+	"id": "extended-base",
+	"name": "Extended Base",
+	"version": "1.0.0",
 	"minAppVersion": "1.10.2",
-	"description": "A Bases table view styled to match Notion databases: hover UI, OPEN buttons, and colored tag pills.",
-	"author": "UmbertoFrancesco",
-	"fundingUrl": "https://buymeacoffee.com/umbertofrancesco",
+	"description": "An Extended Base view with column wrap, top-aligned cells, and transparent background.",
+	"author": "Lucy Roh",
+	"authorUrl": "https://github.com/lucytheboss",
 	"isDesktopOnly": false
 }

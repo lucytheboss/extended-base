@@ -1,9 +1,9 @@
-# GoodBases
+# Extended Base (GoodBases)
 
-A custom [Bases](https://help.obsidian.md/bases) view for
-[Obsidian](https://obsidian.md) that renders your databases as a
-Notion-style table: clean chrome, hover-reveal OPEN buttons, colored
-value pills, and inline cell editing.
+A custom [Bases](https://help.obsidian.md/bases) view for [Obsidian](https://obsidian.md) that renders your databases as a Notion-style table: clean chrome, hover-reveal OPEN buttons, colored value pills, and inline cell editing.
+
+Created by [Lucy Roh](https://github.com/lucytheboss).
+
 
 ![GoodBases — Notion-style table view](docs/asset/intro.png)
 
