@@ -1,7 +1,7 @@
 {
   "name": "extended-base",
   "version": "1.0.0",
-  "description": "A Bases table view styled to match Notion databases: hover UI, OPEN buttons, and colored tag pills.",
+  "description": "Notion-style Bases views for Obsidian: table, list, and board, with colored pills, inline editing, and nested groups.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
