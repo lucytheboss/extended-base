@@ -266,9 +266,10 @@ export class SelectEditor {
 		for (const c of options) {
 			const item = menu.createDiv({ cls: 'ntn-color-option' });
 			const swatch = item.createSpan({ cls: 'ntn-color-swatch' });
-			if (c.name === 'default') {
-				swatch.style.background = 'var(--ntn-pill-bg-light, #EBECED)';
-			} else {
+			// "Default" leaves the swatch on the stylesheet's neutral colors,
+			// which already track light/dark — only real palette entries
+			// override them.
+			if (c.name !== 'default') {
 				applyColorVars(swatch, c as typeof NOTION_COLORS[0]);
 			}
 			item.createSpan({ cls: 'ntn-color-name', text: c.name.charAt(0).toUpperCase() + c.name.slice(1) });

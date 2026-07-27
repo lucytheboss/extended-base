@@ -21,6 +21,7 @@ import { LOG_PREFIX, NOTION_TABLE_VIEW } from '../constants';
 import { PinnedColors, applyPillColor, colorByName } from '../lib/colors';
 import { PillDetection, computePillProps, parsePinnedColors, stripPath } from '../lib/pills';
 import { buildGroupTree, countEntries, GroupNode } from '../lib/groups';
+import { getPropertyIcon, getPropertyMetaType } from '../lib/property-types';
 import { valueToStrings } from '../lib/values';
 import { NotePageModal, OpenSelectOpts } from './note-modal';
 import { SelectEditor } from './select-editor';
@@ -72,31 +73,6 @@ export class NotionTableView extends BasesView {
 		this.patchToolbarNew();
 	}
 
-	private getPropertyMetaType(prop: string): string | undefined {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		const mtm = (this.app as unknown as any).metadataTypeManager;
-		const info = mtm?.getPropertyInfo?.(bare);
-		return typeof info === 'string' ? info : info?.widget ?? info?.type;
-	}
-
-	private getPropertyIcon(prop: string): string {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		if (bare === 'name' && prop.startsWith('file.')) return 'file-text';
-
-		const metaType = this.getPropertyMetaType(prop);
-		
-		switch(metaType) {
-			case 'text': return 'type';
-			case 'number': return 'hash';
-			case 'checkbox': return 'check-square';
-			case 'date':
-			case 'datetime': return 'calendar';
-			case 'multitext':
-			case 'tags':
-			case 'aliases': return 'tags';
-			default: return 'type';
-		}
-	}
 
 	onDataUpdated(): void {
 		// The toolbar may not have existed at construction time; retry until
@@ -122,12 +98,11 @@ export class NotionTableView extends BasesView {
 		const wrapColumns = this.config.get('wrapColumns') as string[] || [];
 
 		// Dummy column to preserve Bases core drag-and-drop index offset (ignores first column)
-		const thTitle = headRow.createEl('th', { cls: 'ntn-th ntn-col-title' });
-		thTitle.style.display = 'none';
+		headRow.createEl('th', { cls: 'ntn-th ntn-col-title ntn-col-dummy' });
 
 		for (const prop of props) {
 			const th = headRow.createEl('th', { cls: 'ntn-th' });
-			const icon = this.getPropertyIcon(prop);
+			const icon = getPropertyIcon(this.app, prop);
 			const iconSpan = th.createSpan({ cls: 'ntn-th-icon' });
 			setIcon(iconSpan, icon);
 
@@ -163,7 +138,7 @@ export class NotionTableView extends BasesView {
 				e.preventDefault();
 				const menu = new Menu();
 				const isWrapped = wrapColumns.includes(prop);
-				menu.addItem((item: any) => {
+				menu.addItem((item) => {
 					item.setTitle(isWrapped ? 'Disable Wrap' : 'Enable Wrap')
 						.setIcon('lines-of-text')
 						.onClick(() => {
@@ -175,7 +150,7 @@ export class NotionTableView extends BasesView {
 				if (this.pills.pillProps.has(prop)) {
 					const disableColorColumns = this.config.get('disableColorColumns') as string[] || [];
 					const isColorDisabled = disableColorColumns.includes(prop);
-					menu.addItem((item: any) => {
+					menu.addItem((item) => {
 						item.setTitle(isColorDisabled ? 'Enable Default Colors' : 'Disable Default Colors')
 							.setIcon('palette')
 							.onClick(() => {
@@ -212,11 +187,11 @@ export class NotionTableView extends BasesView {
 				const gRow = tbody.createEl('tr', { cls: 'ntn-group-row' });
 				const gCell = gRow.createEl('td', { attr: { colspan: String(colCount) } });
 				
-				// Apply padding to indent based on depth
-				gCell.style.paddingLeft = `${(depth * 20) + 10}px`;
+				// Indent by depth; the stylesheet reads this as padding-left.
+				gCell.setCssProps({ '--ntn-indent': `${(depth * 20) + 10}px` });
 				
 				const toggleIcon = gCell.createSpan({ cls: 'ntn-group-toggle' });
-				toggleIcon.innerHTML = isCollapsed ? '▶' : '▼';
+				toggleIcon.setText(isCollapsed ? '▶' : '▼');
 				toggleIcon.addEventListener('click', () => {
 					if (isCollapsed) {
 						this.collapsedGroups.delete(node.fullKey);
@@ -239,11 +214,11 @@ export class NotionTableView extends BasesView {
 				if (limit !== 'all' && renderedCount >= limit) break;
 				const tr = this.renderRow(tbody, entry, props);
 				if (node.key) {
-					// The first visible cell gets indented
-					const firstVisibleCell = Array.from(tr.children).find(c => (c as HTMLElement).style.display !== 'none') as HTMLElement;
-					if (firstVisibleCell) {
-						firstVisibleCell.style.paddingLeft = `${(depth * 20) + 30}px`;
-					}
+					// The first cell that is not the hidden dummy gets indented.
+					const firstVisibleCell = Array.from(tr.cells).find(
+						(c) => !c.hasClass('ntn-col-dummy'),
+					);
+					firstVisibleCell?.setCssProps({ '--ntn-indent': `${(depth * 20) + 30}px` });
 				}
 				renderedCount++;
 			}
@@ -270,7 +245,7 @@ export class NotionTableView extends BasesView {
 			const menu = new Menu();
 			const limits: (number | 'all')[] = [10, 20, 50, 'all'];
 			limits.forEach(val => {
-				menu.addItem((item: any) => {
+				menu.addItem((item) => {
 					item.setTitle(val === 'all' ? 'All' : String(val))
 						.setChecked(String(val) === String(limit))
 						.onClick(() => {
@@ -284,10 +259,11 @@ export class NotionTableView extends BasesView {
 
 	private applyColumnWidth(th: HTMLElement, propId: string) {
 		const widths = this.config.get('columnWidths') as Record<string, number> || {};
-		if (widths[propId]) {
-			th.style.width = `${widths[propId]}px`;
-			th.style.minWidth = `${widths[propId]}px`;
-		}
+		// Width lives in a CSS variable the stylesheet reads, so the element
+		// carries no inline width/min-width of its own.
+		const setWidth = (px: number) => th.setCssProps({ '--ntn-col-width': `${px}px` });
+		let width = widths[propId] ?? 0;
+		if (width) setWidth(width);
 
 		const resizer = th.createDiv({ cls: 'ntn-resizer' });
 		let startX = 0;
@@ -297,10 +273,8 @@ export class NotionTableView extends BasesView {
 		const moveHandler = (ev: PointerEvent) => {
 			if (!isResizing) return;
 			const dx = ev.clientX - startX;
-			let nw = startW + dx;
-			if (nw < 20) nw = 20;
-			th.style.width = `${nw}px`;
-			th.style.minWidth = `${nw}px`;
+			width = Math.max(20, startW + dx);
+			setWidth(width);
 		};
 
 		const upHandler = () => {
@@ -309,9 +283,8 @@ export class NotionTableView extends BasesView {
 			resizer.removeClass('is-resizing');
 			document.removeEventListener('pointermove', moveHandler);
 			document.removeEventListener('pointerup', upHandler);
-			const nw = parseFloat(th.style.width);
 			const cur = this.config.get('columnWidths') as Record<string, number> || {};
-			this.config.set('columnWidths', { ...cur, [propId]: nw });
+			this.config.set('columnWidths', { ...cur, [propId]: width });
 		};
 
 		resizer.addEventListener('pointerdown', (e) => {
@@ -334,8 +307,7 @@ export class NotionTableView extends BasesView {
 		const tr = tbody.createEl('tr', { cls: 'ntn-row' });
 
 		// Dummy cell for the hidden dummy column
-		const titleTd = tr.createEl('td', { cls: 'ntn-td ntn-col-title' });
-		titleTd.style.display = 'none';
+		tr.createEl('td', { cls: 'ntn-td ntn-col-title ntn-col-dummy' });
 
 		for (const prop of props) {
 			const td = tr.createEl('td', { cls: 'ntn-td' });
@@ -408,9 +380,9 @@ export class NotionTableView extends BasesView {
 		const cellEl = td.createDiv({ cls: 'ntn-cell' });
 		if (value != null) { // Handle both null and undefined
 			const strVal = stripPath(value.toString());
-			const metaType = this.getPropertyMetaType(prop);
+			const metaType = getPropertyMetaType(this.app, prop);
 			if (strVal && (!metaType || metaType === 'text' || metaType === 'multitext')) {
-				MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
+				void MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
 			} else {
 				value.renderTo(cellEl, this.app.renderContext);
 			}

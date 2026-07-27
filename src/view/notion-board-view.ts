@@ -15,11 +15,11 @@ import {
 	TFile,
 	Menu,
 	MarkdownRenderer,
-	setIcon,
 } from 'obsidian';
 import { LOG_PREFIX, NOTION_BOARD_VIEW } from '../constants';
 import { PinnedColors, applyPillColor, colorByName } from '../lib/colors';
 import { PillDetection, computePillProps, parsePinnedColors, stripPath } from '../lib/pills';
+import { getPropertyMetaType } from '../lib/property-types';
 import { valueToStrings } from '../lib/values';
 import { NotePageModal, OpenSelectOpts } from './note-modal';
 import { SelectEditor } from './select-editor';
@@ -69,31 +69,6 @@ export class NotionBoardView extends BasesView {
 		this.patchToolbarNew();
 	}
 
-	private getPropertyMetaType(prop: string): string | undefined {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		const mtm = (this.app as unknown as any).metadataTypeManager;
-		const info = mtm?.getPropertyInfo?.(bare);
-		return typeof info === 'string' ? info : info?.widget ?? info?.type;
-	}
-
-	private getPropertyIcon(prop: string): string {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		if (bare === 'name' && prop.startsWith('file.')) return 'file-text';
-
-		const metaType = this.getPropertyMetaType(prop);
-		
-		switch(metaType) {
-			case 'text': return 'type';
-			case 'number': return 'hash';
-			case 'checkbox': return 'check-square';
-			case 'date':
-			case 'datetime': return 'calendar';
-			case 'multitext':
-			case 'tags':
-			case 'aliases': return 'tags';
-			default: return 'type';
-		}
-	}
 
 	onDataUpdated(): void {
 		// The toolbar may not have existed at construction time; retry until
@@ -138,10 +113,6 @@ export class NotionBoardView extends BasesView {
 			const parts = rawGroupKey === 'No Status' ? ['No Status'] : rawGroupKey.split('/');
 			
 			const headerTitles = colHeader.createDiv({ cls: 'ntn-board-column-titles' });
-			headerTitles.style.display = 'flex';
-			headerTitles.style.flexDirection = 'column';
-			headerTitles.style.alignItems = 'flex-start';
-			headerTitles.style.gap = '4px';
 
 			for (let i = 0; i < parts.length; i++) {
 				const part = parts[i];
@@ -150,8 +121,9 @@ export class NotionBoardView extends BasesView {
 				this.applyPillColor(pill, currentFullKey);
 				pill.setText(part);
 				if (i > 0) {
-					pill.style.marginLeft = `${i * 12}px`;
-					pill.style.opacity = '0.9';
+					// Nested group levels step in; the stylesheet reads the offset.
+					pill.addClass('ntn-board-header-pill-nested');
+					pill.setCssProps({ '--ntn-indent': `${i * 12}px` });
 				}
 			}
 			
@@ -186,7 +158,7 @@ export class NotionBoardView extends BasesView {
 		
 		// Title is always first
 		const titleWrap = cardEl.createDiv({ cls: 'ntn-board-card-title' });
-		this.renderCell(titleWrap, entry, 'file.name' as BasesPropertyId);
+		this.renderCell(titleWrap, entry, 'file.name');
 		
 		const propsWrap = cardEl.createDiv({ cls: 'ntn-board-card-props' });
 		for (const prop of props) {
@@ -257,9 +229,9 @@ export class NotionBoardView extends BasesView {
 		const cellEl = td.createDiv({ cls: 'ntn-cell' });
 		if (value != null) { // Handle both null and undefined
 			const strVal = stripPath(value.toString());
-			const metaType = this.getPropertyMetaType(prop);
+			const metaType = getPropertyMetaType(this.app, prop);
 			if (strVal && (!metaType || metaType === 'text' || metaType === 'multitext')) {
-				MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
+				void MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
 			} else {
 				value.renderTo(cellEl, this.app.renderContext);
 			}

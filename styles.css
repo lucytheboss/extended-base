@@ -67,11 +67,11 @@
    doubled class / thead selectors out-rank those theme rules by specificity
    (see bug history #4) — don't reach for !important. */
 .ntn-root .ntn-table thead,
-.ntn-root .ntn-table thead tr,
-.ntn-root .ntn-table tbody tr,
-.ntn-root .ntn-th.ntn-th,
-.ntn-root .ntn-td.ntn-td {
-	background: transparent !important;
+.ntn-root.ntn-root .ntn-table.ntn-table thead tr,
+.ntn-root.ntn-root .ntn-table.ntn-table tbody tr,
+.ntn-root.ntn-root .ntn-th.ntn-th,
+.ntn-root.ntn-root .ntn-td.ntn-td {
+	background: transparent;
 }
 
 /* Lock header/cell horizontal padding so reading mode matches edit mode. In
@@ -93,7 +93,8 @@
 }
 
 .ntn-root .ntn-td.ntn-td {
-	padding-left: 8px;
+	/* --ntn-indent is set per-cell when a row sits under a nested group. */
+	padding-left: var(--ntn-indent, 8px);
 	padding-right: 8px;
 	/* Obsidian's editor/reading-mode styles set break-word/break-all;
 	   in a squeezed column that wraps text one character per line. */
@@ -189,9 +190,9 @@
 
 .ntn-title-text {
 	font-weight: 500;
-	text-decoration: underline;
-	text-decoration-color: rgba(55, 53, 47, 0.16);
-	text-underline-offset: 2px;
+	/* A border rather than text-decoration-* longhands, which Obsidian's
+	   supported browser baseline only partially implements. */
+	border-bottom: 1px solid rgba(55, 53, 47, 0.16);
 	cursor: pointer;
 	white-space: nowrap;
 	overflow: hidden;
@@ -201,7 +202,7 @@
 }
 
 .theme-dark .ntn-title-text {
-	text-decoration-color: rgba(255, 255, 255, 0.14);
+	border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
 /* Hover-reveal OPEN button — absolutely anchored so it can never
@@ -280,6 +281,7 @@
 
 .ntn-group-row td {
 	padding: 14px 8px 6px;
+	padding-left: var(--ntn-indent, 8px);
 	border-bottom: 1px solid var(--ntn-border);
 }
 
@@ -810,6 +812,19 @@
 	position: relative;
 }
 
+/* Set by the resize handle; falls back to auto sizing until a column has
+   actually been dragged. */
+.ntn-root .ntn-th.ntn-th {
+	width: var(--ntn-col-width, auto);
+	min-width: var(--ntn-col-width, auto);
+}
+
+/* The first header/cell is a placeholder that keeps Bases' core
+   drag-and-drop column indices aligned; it is never shown. */
+.ntn-col-dummy {
+	display: none;
+}
+
 .ntn-resizer {
 	position: absolute;
 	right: -3px;
@@ -840,20 +855,20 @@
 	box-shadow: none;
 }
 
-.ntn-wrap-cell, 
-.ntn-wrap-cell :not(.math, .math *, mjx-container, mjx-container *, code, pre) {
-	white-space: normal !important;
+.ntn-root .ntn-wrap-cell.ntn-wrap-cell,
+.ntn-root .ntn-wrap-cell.ntn-wrap-cell :not(.math, .math *, mjx-container, mjx-container *, code, pre) {
+	white-space: normal;
 	word-break: break-word;
 }
 
-.ntn-wrap-cell ul,
-.ntn-wrap-cell ol {
-	padding-left: 7px !important;
-	padding-inline-start: 7px !important;
-	margin-block-start: 4px !important;
-	margin-block-end: 4px !important;
-	margin-left: 0 !important;
-	margin-inline-start: 0 !important;
+.ntn-root .ntn-wrap-cell.ntn-wrap-cell ul,
+.ntn-root .ntn-wrap-cell.ntn-wrap-cell ol {
+	padding-left: 7px;
+	padding-inline-start: 7px;
+	margin-block-start: 4px;
+	margin-block-end: 4px;
+	margin-left: 0;
+	margin-inline-start: 0;
 }
 
 .ntn-wrap-cell p {
@@ -928,6 +943,12 @@
 	min-width: 0;
 	display: flex;
 	align-items: center;
+	/* Set per-row when the row sits under a nested group. */
+	padding-left: var(--ntn-indent, 0);
+}
+
+.ntn-list-container .ntn-group-row {
+	padding-left: var(--ntn-indent, 0);
 }
 
 .ntn-list-right {
@@ -1029,4 +1050,18 @@
 
 .ntn-board-column-new:hover {
 	background: var(--ntn-hover);
+}
+
+/* Board column header: group levels stack, each nested level stepping in.
+   Both were inline styles before; --ntn-indent carries the per-level offset. */
+.ntn-board-column-titles {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.ntn-board-header-pill-nested {
+	margin-left: var(--ntn-indent, 0);
+	opacity: 0.9;
 }

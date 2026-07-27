@@ -13,14 +13,13 @@ import {
 	Platform,
 	QueryController,
 	TFile,
-	Menu,
 	MarkdownRenderer,
-	setIcon,
 } from 'obsidian';
 import { LOG_PREFIX, NOTION_LIST_VIEW } from '../constants';
 import { PinnedColors, applyPillColor, colorByName } from '../lib/colors';
 import { PillDetection, computePillProps, parsePinnedColors, stripPath } from '../lib/pills';
 import { buildGroupTree, countEntries, GroupNode } from '../lib/groups';
+import { getPropertyMetaType } from '../lib/property-types';
 import { valueToStrings } from '../lib/values';
 import { NotePageModal, OpenSelectOpts } from './note-modal';
 import { SelectEditor } from './select-editor';
@@ -72,31 +71,6 @@ export class NotionListView extends BasesView {
 		this.patchToolbarNew();
 	}
 
-	private getPropertyMetaType(prop: string): string | undefined {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		const mtm = (this.app as unknown as any).metadataTypeManager;
-		const info = mtm?.getPropertyInfo?.(bare);
-		return typeof info === 'string' ? info : info?.widget ?? info?.type;
-	}
-
-	private getPropertyIcon(prop: string): string {
-		const bare = prop.split('.').slice(1).join('.').toLowerCase();
-		if (bare === 'name' && prop.startsWith('file.')) return 'file-text';
-
-		const metaType = this.getPropertyMetaType(prop);
-		
-		switch(metaType) {
-			case 'text': return 'type';
-			case 'number': return 'hash';
-			case 'checkbox': return 'check-square';
-			case 'date':
-			case 'datetime': return 'calendar';
-			case 'multitext':
-			case 'tags':
-			case 'aliases': return 'tags';
-			default: return 'type';
-		}
-	}
 
 	onDataUpdated(): void {
 		// The toolbar may not have existed at construction time; retry until
@@ -132,12 +106,12 @@ export class NotionListView extends BasesView {
 				isCollapsed = this.collapsedGroups.has(node.fullKey);
 				
 				const gRow = listContainer.createDiv({ cls: 'ntn-group-row' });
-				// Indent based on depth
-				gRow.style.paddingLeft = `${depth * 20}px`;
+				// Indent by depth; the stylesheet reads this as padding-left.
+				gRow.setCssProps({ '--ntn-indent': `${depth * 20}px` });
 				
 				// Add toggle icon
 				const toggleIcon = gRow.createSpan({ cls: 'ntn-group-toggle' });
-				toggleIcon.innerHTML = isCollapsed ? '▶' : '▼'; // Simple ASCII for now, can be replaced with lucide-icon later
+				toggleIcon.setText(isCollapsed ? '▶' : '▼');
 				toggleIcon.addEventListener('click', () => {
 					if (isCollapsed) {
 						this.collapsedGroups.delete(node.fullKey);
@@ -162,10 +136,8 @@ export class NotionListView extends BasesView {
 				const rowEl = this.renderRow(listContainer, entry, props);
 				if (node.key) {
 					// Indent entries slightly more than their group header
-					const leftEl = rowEl.querySelector('.ntn-list-left') as HTMLElement;
-					if (leftEl) {
-						leftEl.style.paddingLeft = `${(depth * 20) + 30}px`;
-					}
+					const leftEl = rowEl.querySelector<HTMLElement>('.ntn-list-left');
+					leftEl?.setCssProps({ '--ntn-indent': `${(depth * 20) + 30}px` });
 				}
 				renderedCount++;
 			}
@@ -199,7 +171,7 @@ export class NotionListView extends BasesView {
 		const rightEl = rowEl.createDiv({ cls: 'ntn-list-right' });
 
 		// Always render title on the left
-		this.renderCell(leftEl, entry, 'file.name' as BasesPropertyId);
+		this.renderCell(leftEl, entry, 'file.name');
 
 		for (const prop of props) {
 			if (prop === 'file.name') continue; // Title already rendered on left
@@ -270,9 +242,9 @@ export class NotionListView extends BasesView {
 		const cellEl = td.createDiv({ cls: 'ntn-cell' });
 		if (value != null) { // Handle both null and undefined
 			const strVal = stripPath(value.toString());
-			const metaType = this.getPropertyMetaType(prop);
+			const metaType = getPropertyMetaType(this.app, prop);
 			if (strVal && (!metaType || metaType === 'text' || metaType === 'multitext')) {
-				MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
+				void MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
 			} else {
 				value.renderTo(cellEl, this.app.renderContext);
 			}

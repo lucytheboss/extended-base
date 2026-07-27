@@ -16,7 +16,7 @@
      2. Settings → Appearance → CSS snippets → toggle
         "goodbases-notion-toolbar" on.
 
-   The rules are scoped to `.workspace-leaf-content[data-type="bases"]`, so
+   The rules are scoped to `.workspace-leaf-content.workspace-leaf-content[data-type="bases"]`, so
    they affect every Bases leaf's toolbar once the snippet is enabled. (An
    earlier version narrowed this to GoodBases views only via `:has(.ntn-root)`,
    but `:has` triggers broad selector invalidation; since this is an opt-in
@@ -24,40 +24,40 @@
    ============================================================ */
 
 /* "New" → Notion-style blue split button (label + chevron divider). */
-.workspace-leaf-content[data-type="bases"]
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"]
 	.bases-toolbar-item.bases-toolbar-new-item-menu .text-icon-button {
-	background-color: #357ee6 !important; /* Notion blue */
-	border-radius: 6px !important;
-	padding: 0 !important;
-	border: none !important;
-	display: inline-flex !important;
-	align-items: stretch !important; /* vertical divider spans full height */
-	overflow: hidden !important; /* clip corners to keep the rounding */
+	background-color: #357ee6; /* Notion blue */
+	border-radius: 6px;
+	padding: 0;
+	border: none;
+	display: inline-flex;
+	align-items: stretch; /* vertical divider spans full height */
+	overflow: hidden; /* clip corners to keep the rounding */
 	cursor: pointer;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	transition: background-color 0.2s;
 }
 
 /* Hide the original "+" icon. */
-.workspace-leaf-content[data-type="bases"]
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"]
 	.bases-toolbar-item.bases-toolbar-new-item-menu .text-button-icon {
-	display: none !important;
+	display: none;
 }
 
 /* "New" label + the divider line before the chevron. */
-.workspace-leaf-content[data-type="bases"]
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"]
 	.bases-toolbar-item.bases-toolbar-new-item-menu .text-button-label {
-	color: white !important;
-	font-weight: 600 !important;
-	font-size: 14px !important;
-	padding: 6px 12px !important;
+	color: white;
+	font-weight: 600;
+	font-size: 14px;
+	padding: 6px 12px;
 	display: flex;
 	align-items: center;
-	border-right: 1px solid rgba(0, 0, 0, 0.15) !important;
+	border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 /* Chevron-down drawn as an inline SVG in the button's ::after. */
-.workspace-leaf-content[data-type="bases"]
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"]
 	.bases-toolbar-item.bases-toolbar-new-item-menu .text-icon-button::after {
 	content: "";
 	display: block;
@@ -69,24 +69,24 @@
 	background-size: 16px;
 }
 
-.workspace-leaf-content[data-type="bases"]
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"]
 	.bases-toolbar-item.bases-toolbar-new-item-menu .text-icon-button:hover {
-	background-color: #2769c9 !important; /* darker on hover */
+	background-color: #2769c9; /* darker on hover */
 }
 
 /* Drop the text on Sort / Filter / Properties / Search — icons only. */
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-sort-menu .text-button-label,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-filter-menu .text-button-label,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-properties-menu .text-button-label,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-search .text-button-label {
-	display: none !important;
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-sort-menu .text-button-label,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-filter-menu .text-button-label,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-properties-menu .text-button-label,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-search .text-button-label {
+	display: none;
 }
 
 /* Make those icon-only buttons square. */
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-sort-menu .text-icon-button,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-filter-menu .text-icon-button,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-properties-menu .text-icon-button,
-.workspace-leaf-content[data-type="bases"] .bases-toolbar-search .text-icon-button {
-	padding: 6px !important;
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-sort-menu .text-icon-button,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-filter-menu .text-icon-button,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-properties-menu .text-icon-button,
+.workspace-leaf-content.workspace-leaf-content[data-type="bases"] .bases-toolbar-search .text-icon-button {
+	padding: 6px;
 	justify-content: center;
 }
