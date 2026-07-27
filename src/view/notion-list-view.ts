@@ -189,9 +189,13 @@ export class NotionListView extends BasesView {
 
 			const link = titleWrap.createSpan({ text: entry.file.basename, cls: 'ntn-title-text' });
 			link.addEventListener('click', (evt) => {
-				void this.app.workspace.openLinkText(
-					entry.file.path, '', evt.ctrlKey || evt.metaKey,
-				);
+				// Ctrl/Cmd always means "new tab", whatever `openMode` says.
+				const modified = evt.ctrlKey || evt.metaKey;
+				if (!modified && this.config.get('openMode') === 'panel') {
+					this.openPagePanel(entry.file);
+					return;
+				}
+				void this.app.workspace.openLinkText(entry.file.path, '', modified);
 			});
 			return;
 		}

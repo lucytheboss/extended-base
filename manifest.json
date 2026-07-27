@@ -1,9 +1,9 @@
 {
 	"id": "extended-base",
 	"name": "Extended Base",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"minAppVersion": "1.10.2",
-	"description": "An Extended Base view with column wrap, top-aligned cells, and transparent background.",
+	"description": "Notion-style Bases views: table, list, and board, with colored pills, inline editing, and nested groups.",
 	"author": "Lucy Roh",
 	"authorUrl": "https://github.com/lucytheboss",
 	"isDesktopOnly": false

@@ -79,7 +79,9 @@ is unchanged.
 
 Click **+ New** (in the footer, in a board column, or the base toolbar's
 **New** button) to create and edit a note in a centered Notion-style
-panel, without leaving the view:
+panel, without leaving the view. To open *existing* notes there too, set
+the **Open notes in** view option to *Page panel* — clicking a note title
+then opens the panel instead of a tab (Ctrl/Cmd-click still opens a tab):
 
 ![The Notion-style page panel](docs/asset/panel.png)
 
@@ -139,6 +141,7 @@ panel, without leaving the view:
 | Wrap all content | ✅ | | |
 | Show vertical lines | ✅ | | |
 | Row count limit | ✅ (footer) | ✅ | |
+| Open notes in | ✅ | ✅ | ✅ |
 | Group by property | | | ✅ |
 | Hidden groups | | | ✅ |
 | Properties to show as colored pills | ✅ | ✅ | ✅ |
@@ -219,6 +222,19 @@ Source layout:
 - ⚪️ **Gallery view** — card galleries with cover images.
 
 ## Changelog
+
+### 1.0.3
+
+- **Fixed:** the *Open notes in* view option did nothing — nothing read it
+  after the hover OPEN button was dropped in 1.0.1, so the page panel could
+  only ever be reached by creating a new note. Clicking a note title now
+  honours the setting and opens an existing note in the panel when it is
+  set to *Page panel*; Ctrl/Cmd-click still opens a tab. Applies to all
+  three views.
+- **Changed:** the plugin description in `manifest.json` described settings
+  this plugin does not have; it now describes the three views.
+- **Docs:** *Open notes in* is listed in the view-options table and
+  explained under [The page panel](#the-page-panel).
 
 ### 1.0.2
 
