@@ -12,7 +12,7 @@ By [Lucy Roh](https://github.com/lucytheboss).
 > Requires Obsidian **1.10.2+** with the **Bases** core plugin enabled.
 
 > **Extended Base is a fork** of [GoodBases](https://github.com/FrancescoUmberto/GoodBases)
-> by Umberto Francesco Carolini (MIT). v1.0.0 adds the List and Board
+> by Umberto Francesco Carolini (MIT). v1.0.1 adds the List and Board
 > views, nested groups, column resizing/renaming, and per-column
 > options on top of GoodBases 0.5.3. See [Credits](#credits).
 
@@ -204,11 +204,11 @@ Source layout:
 
 ## Roadmap
 
-- ✅ **List and Board views** (1.0) — a compact list layout and a Kanban
+- ✅ **List and Board views** (1.0.1) — a compact list layout and a Kanban
   board built from the base's grouping.
-- ✅ **Nested groups** (1.0) — `/`-separated group values become a
+- ✅ **Nested groups** (1.0.1) — `/`-separated group values become a
   collapsible tree with per-level counts.
-- ✅ **Column resizing and renaming** (1.0) — drag column borders,
+- ✅ **Column resizing and renaming** (1.0.1) — drag column borders,
   double-click a header to rename; both persist per view.
 - 🔵 **Drag-and-drop cards** — move a card between board columns to
   rewrite its group property.
@@ -220,10 +220,7 @@ Source layout:
 
 ## Changelog
 
-### 1.0.0
-
-**🎉 Extended Base** — the fork's first release, on top of GoodBases
-0.5.3.
+### 1.0.1
 
 **New — two more views.**
 
@@ -262,6 +259,16 @@ and a **▼ / ▶** toggle on every header. Shared by the table and list views.
   `mousedown`.
 - **Changed:** gray pills use `--text-normal` for their label so they stay
   legible in both themes.
+- **Fixed:** the MIT copyright notice for the original GoodBases work is
+  retained in `LICENSE` alongside the fork's.
+
+### 1.0.0
+
+**🎉 Extended Base** — the fork's first release, on top of GoodBases
+0.5.3. A rename and re-attribution only: plugin id `extended-base`, the
+Extended Base name, and updated author metadata. The table view kept the
+`bases` view-type id, which later versions preserve for compatibility.
+Feature work landed in 1.0.1.
 
 <details>
 <summary><b>Inherited history — GoodBases 0.3.1 → 0.5.3</b></summary>
@@ -374,7 +381,7 @@ Extended Base is a fork of **[GoodBases](https://github.com/FrancescoUmberto/Goo
 by **Umberto Francesco Carolini**, released under the MIT license. The
 Notion-style table, colored pills, select editor, and page panel are their
 work; this fork adds the List and Board views, nested groups, and the
-column controls listed under [1.0.0](#100).
+column controls listed under [1.0.1](#101).
 
 If GoodBases is useful to you, you can support the original author with a
 [coffee](https://buymeacoffee.com/umbertofrancesco) ☕.
