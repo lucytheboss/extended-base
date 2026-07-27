@@ -23,7 +23,7 @@ export type PinnedColors = Map<string, NotionColor>;
  * https://docs.super.so/notion-colors. Backgrounds and text differ per theme.
  */
 export const NOTION_COLORS: NotionColor[] = [
-	{ name: 'gray',   lightBg: '#EBECED', lightFg: '#9B9A97', darkBg: '#454B4E', darkFg: 'rgba(151,154,155,0.95)' },
+	{ name: 'gray',   lightBg: '#EBECED', lightFg: 'var(--text-normal)', darkBg: '#454B4E', darkFg: 'var(--text-normal)' },
 	{ name: 'brown',  lightBg: '#E9E5E3', lightFg: '#64473A', darkBg: '#434040', darkFg: '#937264' },
 	{ name: 'orange', lightBg: '#FAEBDD', lightFg: '#D9730D', darkBg: '#594A3A', darkFg: '#FFA344' },
 	{ name: 'yellow', lightBg: '#FBF3DB', lightFg: '#DFAB01', darkBg: '#59563B', darkFg: '#FFDC49' },
@@ -55,11 +55,13 @@ function colorKey(text: string): string {
 
 /**
  * Resolve the color for a pill value: a user-pinned override wins, otherwise
- * the deterministic hash.
+ * the deterministic hash (if useDefaultColor is true).
  */
-export function resolvePillColor(text: string, pinned: PinnedColors): NotionColor {
-	const key = colorKey(text);
-	return pinned.get(key) ?? colorFor(key);
+export function resolvePillColor(text: string, pinned: PinnedColors, useDefaultColor = true): NotionColor {
+	const p = pinned.get(colorKey(text));
+	if (p) return p;
+	if (useDefaultColor) return colorFor(text);
+	return { name: 'default', lightBg: 'transparent', lightFg: 'inherit', darkBg: 'transparent', darkFg: 'inherit' };
 }
 
 /** Set the per-pill CSS variables on an element from an exact palette color. */
@@ -73,6 +75,6 @@ export function applyColorVars(el: HTMLElement, c: NotionColor): void {
 }
 
 /** Apply a resolved pill color (pinned override ?? hash) to an element. */
-export function applyPillColor(pill: HTMLElement, text: string, pinned: PinnedColors): void {
-	applyColorVars(pill, resolvePillColor(text, pinned));
+export function applyPillColor(pill: HTMLElement, text: string, pinned: PinnedColors, useDefaultColor = true): void {
+	applyColorVars(pill, resolvePillColor(text, pinned, useDefaultColor));
 }

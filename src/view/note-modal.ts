@@ -22,6 +22,7 @@ import {
 	setIcon,
 } from 'obsidian';
 import { LOG_PREFIX } from '../constants';
+import { stripPath } from '../lib/pills';
 import { splitFrontmatter } from '../lib/frontmatter';
 
 /** What the select editor needs to open anchored to a property row / cell. */
@@ -36,6 +37,7 @@ export interface OpenSelectOpts {
 	isList: boolean;
 	/** Called after each successful write so the opener can re-render. */
 	onWrite?: () => void;
+	useDefaultColor?: boolean;
 }
 
 /** Callbacks the owning view provides; all editing routes through the view. */
@@ -249,7 +251,7 @@ export class NotePageModal extends Modal {
 			for (const item of items) {
 				const pill = valueEl.createSpan({ cls: 'ntn-pill' });
 				this.deps.applyColor(pill, item);
-				pill.setText(item.replace(/^#/, ''));
+				pill.setText(item.replace(/^#/, '').split('/').pop() || '');
 			}
 			if (!items.length) this.renderEmpty(valueEl);
 			if (editable) {
@@ -281,7 +283,7 @@ export class NotePageModal extends Modal {
 
 		// ---- Plain values: click-to-edit inline ----
 		if (this.isEmpty(value)) this.renderEmpty(valueEl);
-		else valueEl.createSpan({ text: this.formatScalar(value) });
+		else valueEl.createSpan({ text: stripPath(this.formatScalar(value)) });
 		if (editable) {
 			valueEl.addClass('ntn-page-prop-editable');
 			valueEl.addEventListener('click', () => this.editScalar(valueEl, key, value));

@@ -84,6 +84,19 @@ export function computePillProps(
 }
 
 /** Parse the `pinnedColors` view option (`value=color` entries) into a map. */
+export function stripPath(str: string): string {
+	if (!str || typeof str !== 'string') return str;
+	if (str.match(/^https?:\/\//)) return str; // Keep URLs
+	if (str.match(/\[\[.*?\]\]/)) return str; // Keep Wiki links
+	if (str.includes(',')) {
+		return str.split(',').map(s => {
+			const trimmed = s.trim();
+			return trimmed.split('/').pop() || trimmed;
+		}).join(', ');
+	}
+	return str.split('/').pop() || str;
+}
+
 export function parsePinnedColors(raw: unknown): PinnedColors {
 	const pinned: PinnedColors = new Map();
 	if (!Array.isArray(raw)) return pinned;

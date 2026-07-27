@@ -152,7 +152,7 @@ export class SelectEditor {
 		for (const v of this.selected) {
 			const pill = this.pillsWrap.createSpan({ cls: 'ntn-pill' });
 			this.deps.applyColor(pill, v);
-			pill.createSpan({ text: v });
+			pill.createSpan({ text: v.split('/').pop() || '' });
 			const x = pill.createSpan({ cls: 'ntn-pill-remove', text: '✕' });
 			x.addEventListener('click', (evt) => {
 				evt.stopPropagation();
@@ -193,8 +193,17 @@ export class SelectEditor {
 			.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 		for (const o of visible) {
 			const row = this.optionsEl.createDiv({ cls: 'ntn-select-option' });
-			// A colored square (left of the label) showing the value's current
-			// color; click to change it.
+
+			// 1. Check mark (left)
+			const isSelected = this.selected.some((s) => s.toLowerCase() === o.toLowerCase());
+			row.createSpan({ cls: 'ntn-select-check', text: isSelected ? '✓' : '' });
+
+			// 2. Pill (middle)
+			const pill = row.createSpan({ cls: 'ntn-pill' });
+			this.deps.applyColor(pill, o);
+			pill.setText(o.split('/').pop() || '');
+
+			// 3. Color square (right)
 			const colorBtn = row.createSpan({
 				cls: 'ntn-select-color-btn',
 				attr: { 'aria-label': 'Change color' },
@@ -204,20 +213,15 @@ export class SelectEditor {
 				evt.stopPropagation();
 				this.openColorMenu(colorBtn, o);
 			});
-			const pill = row.createSpan({ cls: 'ntn-pill' });
-			this.deps.applyColor(pill, o);
-			pill.setText(o);
-			if (this.selected.some((s) => s.toLowerCase() === o.toLowerCase())) {
-				row.createSpan({ cls: 'ntn-select-check', text: '✓' });
-			}
+
 			row.addEventListener('click', () => this.pick(o));
 		}
 		if (q && !this.known.has(ql)) {
 			const row = this.optionsEl.createDiv({ cls: 'ntn-select-option' });
-			row.createSpan({ cls: 'ntn-select-create', text: 'Create' });
+			row.createSpan({ cls: 'ntn-select-create', text: '+' }); // Align with check
 			const pill = row.createSpan({ cls: 'ntn-pill' });
 			this.deps.applyColor(pill, q);
-			pill.setText(q);
+			pill.setText(q.split('/').pop() || '');
 			row.addEventListener('click', () => this.pick(q));
 		}
 		if (!visible.length && !q) {
@@ -258,11 +262,16 @@ export class SelectEditor {
 		const menu = this.deps.doc.body.createDiv({ cls: 'ntn-root ntn-color-menu' });
 		this.colorMenu = menu;
 
-		for (const c of NOTION_COLORS) {
+		const options = [{ name: 'default' }, ...NOTION_COLORS];
+		for (const c of options) {
 			const item = menu.createDiv({ cls: 'ntn-color-option' });
 			const swatch = item.createSpan({ cls: 'ntn-color-swatch' });
-			applyColorVars(swatch, c);
-			item.createSpan({ cls: 'ntn-color-name', text: c.name });
+			if (c.name === 'default') {
+				swatch.style.background = 'var(--ntn-pill-bg-light, #EBECED)';
+			} else {
+				applyColorVars(swatch, c as typeof NOTION_COLORS[0]);
+			}
+			item.createSpan({ cls: 'ntn-color-name', text: c.name.charAt(0).toUpperCase() + c.name.slice(1) });
 			item.addEventListener('click', (evt) => {
 				evt.stopPropagation();
 				this.deps.setColor(value, c.name);

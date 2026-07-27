@@ -17,7 +17,7 @@ import {
 	MarkdownRenderer,
 	setIcon,
 } from 'obsidian';
-import { LOG_PREFIX, NOTION_TABLE_VIEW } from '../constants';
+import { LOG_PREFIX, NOTION_LIST_VIEW } from '../constants';
 import { PinnedColors, applyPillColor, colorByName } from '../lib/colors';
 import { PillDetection, computePillProps, parsePinnedColors, stripPath } from '../lib/pills';
 import { buildGroupTree, countEntries, GroupNode } from '../lib/groups';
@@ -34,8 +34,8 @@ interface CoreNewItemMenu {
 	close(): void;
 }
 
-export class NotionTableView extends BasesView {
-	readonly type = NOTION_TABLE_VIEW;
+export class NotionListView extends BasesView {
+	readonly type = NOTION_LIST_VIEW;
 	private rootEl: HTMLElement;
 	/** The controller this view was created for (holds the core toolbar). */
 	private readonly queryCtrl: QueryController;
@@ -53,7 +53,7 @@ export class NotionTableView extends BasesView {
 	constructor(controller: QueryController, parentEl: HTMLElement) {
 		super(controller);
 		this.queryCtrl = controller;
-		this.rootEl = parentEl.createDiv({ cls: 'ntn-root' });
+		this.rootEl = parentEl.createDiv({ cls: 'ntn-root ntn-list-view' });
 		this.register(() => this.closeSelectMenu());
 		// rootEl.doc resolves to the view's own document, so this also works
 		// when the view lives in a popout window (plain `document` would not).
@@ -113,92 +113,14 @@ export class NotionTableView extends BasesView {
 		this.pills = computePillProps(props, this.data.data, this.config, this.app);
 		this.pinnedColors = parsePinnedColors(this.config.get('pinnedColors'));
 
-		const table = root.createEl('table', { cls: 'ntn-table' });
-
-		// ---- Header ----
-		const thead = table.createEl('thead');
-		const headRow = thead.createEl('tr');
-		const customNames = this.config.get('columnNames') as Record<string, string> || {};
-		const wrapColumns = this.config.get('wrapColumns') as string[] || [];
-
-		// Dummy column to preserve Bases core drag-and-drop index offset (ignores first column)
-		const thTitle = headRow.createEl('th', { cls: 'ntn-th ntn-col-title' });
-		thTitle.style.display = 'none';
-
-		for (const prop of props) {
-			const th = headRow.createEl('th', { cls: 'ntn-th' });
-			const icon = this.getPropertyIcon(prop);
-			const iconSpan = th.createSpan({ cls: 'ntn-th-icon' });
-			setIcon(iconSpan, icon);
-
-			const titleText = customNames[prop] || this.config.getDisplayName(prop);
-			const titleSpan = th.createSpan({ text: titleText, cls: 'ntn-th-title-text' });
-
-			// Feature 2: Double click to rename
-			titleSpan.addEventListener('dblclick', (e) => {
-				e.stopPropagation();
-				titleSpan.empty();
-				const input = titleSpan.createEl('input', { type: 'text', value: titleText, cls: 'ntn-rename-input' });
-				input.focus();
-				const save = () => {
-					const newName = input.value.trim();
-					if (newName && newName !== this.config.getDisplayName(prop)) {
-						const current = this.config.get('columnNames') as Record<string, string> || {};
-						this.config.set('columnNames', { ...current, [prop]: newName });
-					} else if (!newName || newName === this.config.getDisplayName(prop)) {
-						const current = this.config.get('columnNames') as Record<string, string> || {};
-						delete current[prop];
-						this.config.set('columnNames', current);
-					}
-				};
-				input.addEventListener('blur', save);
-				input.addEventListener('keydown', (ke) => {
-					if (ke.key === 'Enter') save();
-					if (ke.key === 'Escape') this.config.set('columnNames', this.config.get('columnNames')); // Force re-render
-				});
-			});
-
-			// Feature 6: Context menu for Wrap
-			th.addEventListener('contextmenu', (e) => {
-				e.preventDefault();
-				const menu = new Menu();
-				const isWrapped = wrapColumns.includes(prop);
-				menu.addItem((item: any) => {
-					item.setTitle(isWrapped ? 'Disable Wrap' : 'Enable Wrap')
-						.setIcon('lines-of-text')
-						.onClick(() => {
-							const newWrap = isWrapped ? wrapColumns.filter(c => c !== prop) : [...wrapColumns, prop];
-							this.config.set('wrapColumns', newWrap);
-						});
-				});
-
-				if (this.pills.pillProps.has(prop)) {
-					const disableColorColumns = this.config.get('disableColorColumns') as string[] || [];
-					const isColorDisabled = disableColorColumns.includes(prop);
-					menu.addItem((item: any) => {
-						item.setTitle(isColorDisabled ? 'Enable Default Colors' : 'Disable Default Colors')
-							.setIcon('palette')
-							.onClick(() => {
-								const newDisable = isColorDisabled ? disableColorColumns.filter(c => c !== prop) : [...disableColorColumns, prop];
-								this.config.set('disableColorColumns', newDisable);
-							});
-					});
-				}
-
-				menu.showAtMouseEvent(e);
-			});
-
-			this.applyColumnWidth(th, prop);
-		}
+		const listContainer = root.createDiv({ cls: 'ntn-list-container' });
 
 		// ---- Body (group-aware) ----
-		const tbody = table.createEl('tbody');
-		const colCount = props.length + 1;
-
 		let renderedCount = 0;
-		let limitRaw = this.config.get('rowLimit');
-		if (limitRaw === undefined) limitRaw = 50;
-		const limit = limitRaw === 'all' ? 'all' : parseInt(String(limitRaw), 10) || 50;
+		let limitRaw = this.config.get('rowCount');
+		if (limitRaw === undefined) limitRaw = '10';
+		const limitStr = String(limitRaw).trim();
+		const limit = (limitStr === 'all' || limitStr === '0') ? 'all' : parseInt(limitStr, 10) || 10;
 
 		const roots = buildGroupTree(this.data.groupedData);
 
@@ -209,14 +131,13 @@ export class NotionTableView extends BasesView {
 			if (node.key) {
 				isCollapsed = this.collapsedGroups.has(node.fullKey);
 				
-				const gRow = tbody.createEl('tr', { cls: 'ntn-group-row' });
-				const gCell = gRow.createEl('td', { attr: { colspan: String(colCount) } });
+				const gRow = listContainer.createDiv({ cls: 'ntn-group-row' });
+				// Indent based on depth
+				gRow.style.paddingLeft = `${depth * 20}px`;
 				
-				// Apply padding to indent based on depth
-				gCell.style.paddingLeft = `${(depth * 20) + 10}px`;
-				
-				const toggleIcon = gCell.createSpan({ cls: 'ntn-group-toggle' });
-				toggleIcon.innerHTML = isCollapsed ? '▶' : '▼';
+				// Add toggle icon
+				const toggleIcon = gRow.createSpan({ cls: 'ntn-group-toggle' });
+				toggleIcon.innerHTML = isCollapsed ? '▶' : '▼'; // Simple ASCII for now, can be replaced with lucide-icon later
 				toggleIcon.addEventListener('click', () => {
 					if (isCollapsed) {
 						this.collapsedGroups.delete(node.fullKey);
@@ -225,11 +146,12 @@ export class NotionTableView extends BasesView {
 					}
 					this.onDataUpdated();
 				});
-
-				const pill = gCell.createSpan({ cls: 'ntn-pill' });
+				
+				const pill = gRow.createSpan({ cls: 'ntn-pill' });
 				this.applyPillColor(pill, node.fullKey);
 				pill.setText(node.key);
-				gCell.createSpan({ cls: 'ntn-group-count', text: String(countEntries(node)) });
+				
+				gRow.createSpan({ cls: 'ntn-group-count', text: String(countEntries(node)) });
 			}
 
 			if (isCollapsed) return;
@@ -237,17 +159,18 @@ export class NotionTableView extends BasesView {
 			// Render entries at this level
 			for (const entry of node.entries) {
 				if (limit !== 'all' && renderedCount >= limit) break;
-				const tr = this.renderRow(tbody, entry, props);
+				const rowEl = this.renderRow(listContainer, entry, props);
 				if (node.key) {
-					// The first visible cell gets indented
-					const firstVisibleCell = Array.from(tr.children).find(c => (c as HTMLElement).style.display !== 'none') as HTMLElement;
-					if (firstVisibleCell) {
-						firstVisibleCell.style.paddingLeft = `${(depth * 20) + 30}px`;
+					// Indent entries slightly more than their group header
+					const leftEl = rowEl.querySelector('.ntn-list-left') as HTMLElement;
+					if (leftEl) {
+						leftEl.style.paddingLeft = `${(depth * 20) + 30}px`;
 					}
 				}
 				renderedCount++;
 			}
 
+			// Render children
 			for (const child of node.children.values()) {
 				renderNode(child, node.key ? depth + 1 : depth);
 			}
@@ -257,94 +180,33 @@ export class NotionTableView extends BasesView {
 			renderNode(rootNode, 0);
 		}
 
-		// ---- "+ New" footer and Row limit ----
+		// ---- "+ New" footer ----
 		const footerWrap = root.createDiv({ cls: 'ntn-footer-wrap' });
 		
 		const newRow = footerWrap.createDiv({ cls: 'ntn-new-row' });
 		newRow.createSpan({ cls: 'ntn-new-plus', text: '+' });
 		newRow.createSpan({ text: 'New' });
 		newRow.addEventListener('click', () => void this.createAndOpenPage());
-
-		const limitSelect = footerWrap.createDiv({ cls: 'ntn-limit-subtle', text: `Rows: ${limit} ▾` });
-		limitSelect.addEventListener('click', (e) => {
-			const menu = new Menu();
-			const limits: (number | 'all')[] = [10, 20, 50, 'all'];
-			limits.forEach(val => {
-				menu.addItem((item: any) => {
-					item.setTitle(val === 'all' ? 'All' : String(val))
-						.setChecked(String(val) === String(limit))
-						.onClick(() => {
-							this.config.set('rowLimit', val);
-						});
-				});
-			});
-			menu.showAtMouseEvent(e);
-		});
-	}
-
-	private applyColumnWidth(th: HTMLElement, propId: string) {
-		const widths = this.config.get('columnWidths') as Record<string, number> || {};
-		if (widths[propId]) {
-			th.style.width = `${widths[propId]}px`;
-			th.style.minWidth = `${widths[propId]}px`;
-		}
-
-		const resizer = th.createDiv({ cls: 'ntn-resizer' });
-		let startX = 0;
-		let startW = 0;
-		let isResizing = false;
-
-		const moveHandler = (ev: PointerEvent) => {
-			if (!isResizing) return;
-			const dx = ev.clientX - startX;
-			let nw = startW + dx;
-			if (nw < 20) nw = 20;
-			th.style.width = `${nw}px`;
-			th.style.minWidth = `${nw}px`;
-		};
-
-		const upHandler = () => {
-			if (!isResizing) return;
-			isResizing = false;
-			resizer.removeClass('is-resizing');
-			document.removeEventListener('pointermove', moveHandler);
-			document.removeEventListener('pointerup', upHandler);
-			const nw = parseFloat(th.style.width);
-			const cur = this.config.get('columnWidths') as Record<string, number> || {};
-			this.config.set('columnWidths', { ...cur, [propId]: nw });
-		};
-
-		resizer.addEventListener('pointerdown', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			isResizing = true;
-			startX = e.clientX;
-			startW = th.getBoundingClientRect().width;
-			resizer.addClass('is-resizing');
-			document.addEventListener('pointermove', moveHandler);
-			document.addEventListener('pointerup', upHandler);
-		});
 	}
 
 	private renderRow(
-		tbody: HTMLElement,
+		container: HTMLElement,
 		entry: BasesEntry,
 		props: BasesPropertyId[],
-	): HTMLTableRowElement {
-		const tr = tbody.createEl('tr', { cls: 'ntn-row' });
+	): HTMLElement {
+		const rowEl = container.createDiv({ cls: 'ntn-list-row' });
+		const leftEl = rowEl.createDiv({ cls: 'ntn-list-left' });
+		const rightEl = rowEl.createDiv({ cls: 'ntn-list-right' });
 
-		// Dummy cell for the hidden dummy column
-		const titleTd = tr.createEl('td', { cls: 'ntn-td ntn-col-title' });
-		titleTd.style.display = 'none';
+		// Always render title on the left
+		this.renderCell(leftEl, entry, 'file.name' as BasesPropertyId);
 
 		for (const prop of props) {
-			const td = tr.createEl('td', { cls: 'ntn-td' });
-			if ((this.config.get('wrapColumns') as string[] || [])?.includes(prop)) {
-				td.addClass('ntn-wrap-cell');
-			}
-			this.renderCell(td, entry, prop);
+			if (prop === 'file.name') continue; // Title already rendered on left
+			const cellWrap = rightEl.createDiv({ cls: 'ntn-list-cell' });
+			this.renderCell(cellWrap, entry, prop);
 		}
-		return tr;
+		return rowEl;
 	}
 
 	private renderCell(td: HTMLElement, entry: BasesEntry, prop: BasesPropertyId): void {
