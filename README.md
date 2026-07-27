@@ -175,7 +175,7 @@ Properties / Search are an **optional CSS snippet** — the toolbar is core
 Obsidian UI, outside the plugin's views, so the plugin doesn't style it:
 
 1. Copy
-   [`snippets/goodbases-notion-toolbar.css`](snippets/goodbases-notion-toolbar.css)
+   [`snippets/extended-base-notion-toolbar.css`](snippets/extended-base-notion-toolbar.css)
    into `VaultRoot/.obsidian/snippets/`.
 2. Enable it under **Settings → Appearance → CSS snippets**.
 
@@ -222,6 +222,33 @@ Source layout:
 - ⚪️ **Gallery view** — card galleries with cover images.
 
 ## Changelog
+
+### 1.0.5
+
+Housekeeping only — no functional change to the plugin.
+
+- **Changed:** the optional toolbar snippet is now
+  `snippets/extended-base-notion-toolbar.css` (it was still named after the
+  upstream project). Only the filename and its header comment changed — no
+  CSS selector depended on the old name, so a copy you already enabled in
+  `.obsidian/snippets/` keeps working untouched.
+- **Docs:** recorded 1.0.4 below, which shipped without a changelog entry.
+
+### 1.0.4
+
+Housekeeping only — no functional change to the plugin.
+
+- **Fixed:** the `docs/` landing page was still the upstream GoodBases site
+  verbatim — its title, brand, hero copy, support section, GitHub links and
+  OG tags all pointed at the original author, and `pages.yml` publishes that
+  folder. It is now the Extended Base site: the three views, the 1.0.x
+  changelog, and correct install instructions. The stale roadmap section was
+  dropped rather than reattributed, since those were upstream's plans.
+- **Changed:** attribution to Umberto Francesco Carolini is now explicit in a
+  Credits section and the site footer, alongside `LICENSE` and this README.
+- **Changed:** the leftover `[good-bases]` build log prefix, and the plugin
+  path in `.env.example` (the deploy code already used the manifest id, so
+  only the comment was wrong).
 
 ### 1.0.3
 
@@ -375,7 +402,7 @@ Also in this release:
 
 - **Changed:** the Notion-style toolbar restyle (blue "New" button +
   icon-only Sort / Filter / Properties / Search) became an **optional CSS
-  snippet** (`snippets/goodbases-notion-toolbar.css`) rather than shipping
+  snippet** (`snippets/extended-base-notion-toolbar.css`) rather than shipping
   in the plugin, so the plugin no longer restyles Obsidian's core UI.
 
 ### 0.4.0

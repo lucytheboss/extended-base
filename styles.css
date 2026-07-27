@@ -803,7 +803,7 @@
 
 /* The Notion-style Bases-toolbar restyle (blue "New" split button +
    icon-only controls) lives in an OPTIONAL CSS snippet, not here:
-   snippets/goodbases-notion-toolbar.css. It targets Obsidian core UI
+   snippets/extended-base-notion-toolbar.css. It targets Obsidian core UI
    outside this plugin's view, so it ships as opt-in rather than being
    injected document-wide. See the README ("Optional: Notion-style
    toolbar"). */

@@ -1,5 +1,5 @@
 /* ============================================================
-   GoodBases — optional "Notion-style toolbar" snippet
+   Extended Base — optional "Notion-style toolbar" snippet
    ============================================================
 
    This restyles Obsidian's CORE Bases toolbar (the New / Sort / Filter /
@@ -14,11 +14,11 @@
    To enable:
      1. Copy this file to  <vault>/.obsidian/snippets/
      2. Settings → Appearance → CSS snippets → toggle
-        "goodbases-notion-toolbar" on.
+        "extended-base-notion-toolbar" on.
 
    The rules are scoped to `.workspace-leaf-content.workspace-leaf-content[data-type="bases"]`, so
    they affect every Bases leaf's toolbar once the snippet is enabled. (An
-   earlier version narrowed this to GoodBases views only via `:has(.ntn-root)`,
+   earlier version narrowed this to this plugin's views only via `:has(.ntn-root)`,
    but `:has` triggers broad selector invalidation; since this is an opt-in
    snippet you turn on deliberately, restyling all bases toolbars is fine.)
    ============================================================ */
