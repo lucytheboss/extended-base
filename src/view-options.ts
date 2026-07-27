@@ -1,4 +1,4 @@
-/** The view-settings options GoodBases adds to the Bases toolbar. */
+/** The view-settings options Extended Base adds to the Bases toolbar. */
 import { BasesAllOptions, BasesViewConfig } from 'obsidian';
 
 /**

@@ -52,7 +52,7 @@ async function deployToVault() {
 
 	const vault = expandHome(vaultRaw);
 	if (!existsSync(vault)) {
-		console.warn(`[good-bases] OBSIDIAN_VAULT_PATH does not exist, skipping deploy: ${vault}`);
+		console.warn(`[extended-base] OBSIDIAN_VAULT_PATH does not exist, skipping deploy: ${vault}`);
 		return;
 	}
 
@@ -63,9 +63,9 @@ async function deployToVault() {
 		await Promise.all(
 			PLUGIN_ASSETS.map((f) => copyFile(f, path.join(dest, f))),
 		);
-		console.log(`[good-bases] deployed ${PLUGIN_ASSETS.join(', ')} → ${dest}`);
+		console.log(`[extended-base] deployed ${PLUGIN_ASSETS.join(', ')} → ${dest}`);
 	} catch (e) {
-		console.warn('[good-bases] failed to deploy to vault:', e.message);
+		console.warn('[extended-base] failed to deploy to vault:', e.message);
 	}
 }
 

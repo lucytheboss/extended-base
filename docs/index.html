@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GoodBases — Notion-style tables for Obsidian Bases</title>
-<meta name="description" content="A free, open-source Obsidian plugin that renders your Bases as Notion-style tables: colored pills, inline editing, hover actions.">
-<meta property="og:title" content="GoodBases — Notion-style tables for Obsidian Bases">
-<meta property="og:description" content="A free, open-source Obsidian plugin that renders your Bases as Notion-style tables: colored pills, inline editing, hover actions.">
-<meta property="og:image" content="https://francescoumberto.github.io/GoodBases/asset/intro.png">
-<meta property="og:url" content="https://francescoumberto.github.io/GoodBases/">
+<title>Extended Base — Notion-style views for Obsidian Bases</title>
+<meta name="description" content="A free, open-source Obsidian plugin that renders your Bases as Notion-style table, list, and board views: colored pills, inline editing, nested groups.">
+<meta property="og:title" content="Extended Base — Notion-style views for Obsidian Bases">
+<meta property="og:description" content="A free, open-source Obsidian plugin that renders your Bases as Notion-style table, list, and board views: colored pills, inline editing, nested groups.">
+<meta property="og:image" content="https://lucytheboss.github.io/extended-base/asset/intro.png">
+<meta property="og:url" content="https://lucytheboss.github.io/extended-base/">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -16,39 +16,72 @@
 
 <header>
 	<nav class="nav">
-		<a class="brand" href="#">🗂️ GoodBases</a>
+		<a class="brand" href="#">🗂️ Extended Base</a>
+		<a href="#views">Views</a>
 		<a href="#features">Features</a>
 		<a href="#demo">Demo</a>
-		<a href="#roadmap">Roadmap</a>
 		<a href="#changelog">Changelog</a>
 		<a href="#install">Install</a>
-		<a href="https://github.com/FrancescoUmberto/GoodBases">GitHub</a>
-		<a class="bmc small" href="https://buymeacoffee.com/umbertofrancesco">☕ Support</a>
+		<a href="https://github.com/lucytheboss/extended-base">GitHub</a>
 	</nav>
 </header>
 
 <main>
 	<div class="hero">
-		<h1>Notion-style tables<br>for Obsidian Bases</h1>
+		<h1>Notion-style views<br>for Obsidian Bases</h1>
 		<p class="tagline">
-			<strong><a href="https://community.obsidian.md/plugins/good-bases">GoodBases</a></strong> is a free, open-source plugin that renders your
-			Obsidian Bases as Notion-style databases — clean chrome, colored
-			pills, hover actions, and inline editing. Your notes stay yours;
-			only the look changes.
+			<strong>Extended Base</strong> is a free, open-source plugin that
+			renders your Obsidian Bases as Notion-style databases — a
+			<strong>table</strong>, a <strong>list</strong>, and a
+			<strong>board</strong>, with clean chrome, colored pills, hover
+			actions, and inline editing. Your notes stay yours; only the look
+			changes.
 		</p>
 		<div class="cta">
 			<a class="btn primary" href="#install">Install</a>
-			<a class="btn" href="https://github.com/FrancescoUmberto/GoodBases">View on GitHub</a>
-			<a class="bmc" href="https://buymeacoffee.com/umbertofrancesco">☕ Buy me a coffee</a>
+			<a class="btn" href="https://github.com/lucytheboss/extended-base">View on GitHub</a>
 		</div>
-		<img class="shot" src="asset/intro.png" alt="GoodBases rendering an Obsidian Base as a Notion-style table">
+		<img class="shot" src="asset/intro.png" alt="Extended Base rendering an Obsidian Base as a Notion-style table">
 	</div>
+
+	<section id="views">
+		<h2>The three views</h2>
+		<p class="prereq">Pick one from the base's view selector. All three
+			share the same pill colors, select editor, inline editing, and page
+			panel.</p>
+		<div class="features">
+			<div class="card">
+				<span class="pill blue">Table</span>
+				<h3>Notion Table</h3>
+				<p>The full database grid — resizable columns with widths saved
+				per view, double-click to rename a header, a per-column
+				right-click menu, property-type icons, nested collapsible
+				groups, and a <code>Rows: 50 ▾</code> footer limit.</p>
+			</div>
+			<div class="card">
+				<span class="pill green">List</span>
+				<h3>Notion List</h3>
+				<p>A compact one-line-per-note layout: the note title on the
+				left, its properties on the right. Same grouping, pills, and
+				inline editing as the table, minus the grid.</p>
+			</div>
+			<div class="card">
+				<span class="pill purple">Board</span>
+				<h3>Notion Board</h3>
+				<p>A Kanban board built from the base's grouping — one column
+				per group, one card per note carrying every visible property,
+				a per-column <strong>+ New</strong>, and right-click →
+				<strong>Hide group</strong>. Ungrouped notes collect under
+				<strong>No Status</strong>.</p>
+			</div>
+		</div>
+	</section>
 
 	<section id="features">
 		<h2>Features</h2>
 		<div class="features">
 			<div class="card">
-				<span class="pill blue">Table</span>
+				<span class="pill gray">Chrome</span>
 				<h3>Notion-fidelity chrome</h3>
 				<p>System font stack, hairline borders, row hover wash, and a
 				horizontal scroll container so columns never crush — even in
@@ -60,14 +93,33 @@
 				<p>Tags and list properties render with Notion's 9-color
 				palette. A deterministic hash keeps each value's color stable
 				forever — or recolor any value yourself with the built-in
-				color picker.</p>
+				color picker, including a <strong>Default</strong> (no color)
+				entry.</p>
 			</div>
 			<div class="card">
 				<span class="pill yellow">Editing</span>
 				<h3>Inline cell editing</h3>
 				<p>Click a cell to edit text and numbers in a floating input;
 				checkboxes toggle in place. Pill cells open a select menu with
-				every known value, search, and create-on-Enter.</p>
+				every known value, search, and create-on-Enter. Text and
+				multitext cells render Markdown, so links and formatting work
+				in-cell.</p>
+			</div>
+			<div class="card">
+				<span class="pill pink">Groups</span>
+				<h3>Nested collapsible groups</h3>
+				<p>Group values containing <code>/</code> build a real tree:
+				indented headers per level, counts that include descendants,
+				and a <strong>▼ / ▶</strong> toggle on every header. Shared by
+				the table and list views.</p>
+			</div>
+			<div class="card">
+				<span class="pill blue">Columns</span>
+				<h3>Column controls</h3>
+				<p>Drag a column border to resize, double-click a header to
+				rename it (display name only — the property is untouched), and
+				right-click a header to toggle wrapping or turn off automatic
+				pill colors for that column.</p>
 			</div>
 			<div class="card">
 				<span class="pill gray">Panel</span>
@@ -77,23 +129,12 @@
 				body rendered as formatted Markdown — click to edit the source.</p>
 			</div>
 			<div class="card">
-				<span class="pill purple">OPEN</span>
-				<h3>Hover-reveal OPEN button</h3>
-				<p>Hover a row to reveal an OPEN button that jumps to the note —
-				in a new tab or straight into the page panel, your choice.</p>
-			</div>
-			<div class="card">
-				<span class="pill pink">Groups</span>
-				<h3>Grouping support</h3>
-				<p>Respects the Bases <em>group by</em> configuration, with
-				Notion-style group headers and counts.</p>
-			</div>
-			<div class="card">
 				<span class="pill orange">Options</span>
 				<h3>View options</h3>
-				<p>Wrap cell content, toggle vertical lines, choose how OPEN
-				opens notes, force properties to render as pills, and pin pill
-				colors — all from the view's settings menu.</p>
+				<p>Wrap cell content, toggle vertical lines, choose how notes
+				open (new tab or page panel), force properties to render as
+				pills, cap the row count, and pin pill colors — all from the
+				view's settings menu.</p>
 			</div>
 		</div>
 	</section>
@@ -112,256 +153,116 @@
 			used for the property, each with its own stable color.</p>
 	</section>
 
-	<section id="roadmap">
-		<h2>Roadmap</h2>
-		<div class="roadmap">
-			<ol class="timeline">
-				<li class="done">
-					<div class="head"><strong>First public release</strong>
-						<span class="marker done">0.3 · shipped</span></div>
-					<p>Notion-style table view — colored pills, inline cell editing,
-						the pill select editor, pinned colors, hover-reveal OPEN
-						button, grouping, and view options.</p>
-				</li>
-				<li class="done">
-					<div class="head"><strong>Per-value color picker</strong>
-						<span class="marker done">0.4 · shipped</span></div>
-					<p>Recolor any value from Notion's palette; your choice persists
-						everywhere it appears. Cells wrap by default.</p>
-				</li>
-				<li class="done">
-					<div class="head"><strong>Page panel</strong>
-						<span class="marker done">0.5 · shipped</span></div>
-					<p>Create and open notes in a centered Notion-style panel —
-						editable title and properties, body rendered as formatted
-						Markdown — plus an “Open notes in” option for the OPEN
-						button.</p>
-				</li>
-				<li class="next">
-					<div class="head"><strong>Column resizing</strong>
-						<span class="marker next">Next up</span></div>
-					<p>Drag handles on column borders, with widths persisted per
-						view.</p>
-				</li>
-				<li class="next">
-					<div class="head"><strong>Calculated footers</strong>
-						<span class="marker next">Next up</span></div>
-					<p>A Notion-style per-column “Calculate” row — count, sum,
-						average, and more.</p>
-				</li>
-				<li class="next">
-					<div class="head"><strong>Editable tags</strong>
-						<span class="marker next">Next up</span></div>
-					<p>Extend the select editor to write <code>tags</code> safely,
-						currently read-only.</p>
-				</li>
-				<li class="later">
-					<div class="head"><strong>Board &amp; gallery views</strong>
-						<span class="marker later">Exploring</span></div>
-					<p>Kanban boards and card galleries — deprioritized for now while
-						table fidelity comes first.</p>
-				</li>
-			</ol>
-		</div>
-		<p class="note">Roadmap items aren't promises or dates — they're the
-			directions GoodBases is heading. Want to nudge one up the list?
-			<a href="https://github.com/FrancescoUmberto/GoodBases/issues">Open an
-			issue</a> or <a href="https://buymeacoffee.com/umbertofrancesco">buy me
-			a coffee</a>.</p>
-	</section>
-
 	<section id="changelog">
 		<h2>Changelog</h2>
 		<div class="changelog">
 
 			<details class="release" open>
 				<summary>
-					<span class="ver">0.5.3</span>
+					<span class="ver">1.0.3</span>
 					<span class="tag">Latest</span>
 				</summary>
 				<div class="body">
 					<ul>
-						<li>Addressed the community plugin review feedback — inline
-							styles now go through Obsidian's official styling APIs, modal
-							lifecycle methods match Obsidian's types, and the stylesheet
-							no longer uses <code>!important</code> (overrides win by
-							selector specificity instead). No functional changes.</li>
+						<li>Fixed: the <em>Open notes in</em> option could only ever be
+							reached by creating a new note. Clicking a note title now
+							honours the setting and opens an existing note in the panel
+							when it is set to <em>Page panel</em>; Ctrl/Cmd-click still
+							opens a tab. Applies to all three views.</li>
+						<li>Changed: the plugin description in <code>manifest.json</code>
+							described settings this plugin does not have; it now describes
+							the three views.</li>
 					</ul>
 				</div>
 			</details>
 
 			<details class="release">
 				<summary>
-					<span class="ver">0.5.2</span>
+					<span class="ver">1.0.2</span>
 				</summary>
 				<div class="body">
 					<ul>
-						<li>In the page panel, editing the body of a note with many
-							properties could squeeze the editor to nothing, hiding the
-							content — the editor now grows with its content and the
-							panel scrolls.</li>
+						<li>Fixed: the <strong>Default</strong> swatch in the pill color
+							picker followed the light-mode palette even in dark mode; it
+							now tracks the theme.</li>
+						<li>Changed: addressed the community plugin review lint — inline
+							element styles are gone in favour of CSS classes and
+							<code>setCssProps</code> custom properties, group toggles use
+							<code>setText</code>, and the property-type lookup moved into a
+							typed helper shared by all three views.</li>
+						<li>Changed: <code>styles.css</code> and the toolbar snippet no
+							longer use <code>!important</code> — overrides win by selector
+							specificity instead.</li>
 					</ul>
-				</div>
-			</details>
-
-			<details class="release">
-				<summary>
-					<span class="ver">0.5.1</span>
-				</summary>
-				<div class="body">
-					<ul>
-						<li>The base's native toolbar <strong>New</strong> button now
-							opens the page panel too, while a GoodBases view is active
-							(other Bases views keep the core popover).</li>
-						<li>Added an open-in-new-tab button next to the page panel's
-							close button — it saves pending edits, closes the panel, and
-							opens the note in a new tab.</li>
-					</ul>
+					<p>No functional changes beyond the color-picker fix.</p>
 				</div>
 			</details>
 
 			<details class="release" open>
 				<summary>
-					<span class="ver">0.5.0</span>
+					<span class="ver">1.0.1</span>
 					<span class="tag major">Major</span>
 				</summary>
 				<div class="body">
-					<p class="headline">📄 <strong>New Notion-style page panel.</strong>
-						<strong>+ New</strong> now opens the freshly created note
-						centered in a panel, like Notion's page peek: an editable
-						title, the note's properties, and the body rendered as formatted Markdown</p>
-					<img class="shot" src="asset/panel.png" alt="The Notion-style page panel with editable title, properties, and rendered Markdown body">
-					<img class="shot" src="asset/panel_demo.gif" alt="Creating and editing a note in the page panel">
+					<p class="headline">🗂️ <strong>New — two more views.</strong>
+						<strong>Notion List</strong>, a one-line-per-note layout with a
+						<em>Row count limit</em> option, and <strong>Notion Board</strong>,
+						a Kanban board built from the base's grouping.</p>
+					<p><strong>New — nested, collapsible groups.</strong> Group values
+						containing <code>/</code> build a real tree: indented headers per
+						level, counts that include descendants, and a
+						<strong>▼ / ▶</strong> toggle on every header.</p>
+					<p><strong>New — column controls in the table.</strong></p>
+					<ul>
+						<li>Drag a column border to resize; widths persist per view.</li>
+						<li>Double-click a header to rename it (display name only).</li>
+						<li>Right-click a header to toggle wrapping for that column, or
+							to turn off automatic pill colors for that column.</li>
+						<li>Headers now show an icon matching the property's type.</li>
+						<li>A <code>Rows: N ▾</code> footer control limits how many rows
+							render.</li>
+					</ul>
 					<p>Also in this release:</p>
 					<ul>
-						<li>Added an “Open notes in” view option — point the hover
-							OPEN button at a new tab (default) or at the page panel.</li>
+						<li>Added: text and multitext cells render Markdown, so links and
+							formatting work in-cell.</li>
+						<li>Added: a <strong>Default</strong> (no color) entry in the pill
+							color picker.</li>
+						<li>Changed: pills and path-like values display only their last
+							<code>/</code> segment; URLs, wiki links, and comma-separated
+							lists are preserved.</li>
+						<li>Changed: the table's Name column is a normal, reorderable
+							column instead of a pinned first column — the hover
+							<strong>OPEN</strong> button is gone; click a title to open it,
+							Ctrl/Cmd-click for a new tab.</li>
+						<li>Fixed: the MIT copyright notice for the original GoodBases
+							work is retained in <code>LICENSE</code> alongside the
+							fork's.</li>
 					</ul>
 				</div>
 			</details>
 
 			<details class="release">
 				<summary>
-					<span class="ver">0.4.5</span>
+					<span class="ver">1.0.0</span>
 				</summary>
 				<div class="body">
-					<ul>
-						<li>In dark mode the table header no longer shows a light
-							background — it now follows the page background like the rest
-							of the table.</li>
-						<li>Column headers now align consistently between editing and
-							reading mode (header text is vertically centered in both).</li>
-					</ul>
+					<p>🎉 <strong>Extended Base</strong> — the fork's first release, on
+						top of GoodBases 0.5.3. A rename and re-attribution only: plugin
+						id <code>extended-base</code>, the Extended Base name, and updated
+						author metadata. Feature work landed in 1.0.1.</p>
 				</div>
 			</details>
 
 			<details class="release">
-				<summary>
-					<span class="ver">0.4.4</span>
-				</summary>
+				<summary><span class="ver">0.3.1 – 0.5.3</span></summary>
 				<div class="body">
-					<ul>
-						<li>Long, multi-line text cells now edit in a textarea, so the
-							full wrapped text stays visible while you type — previously a
-							single-line input scrolled the text sideways. Press
-							<strong>Shift+Enter</strong> for a newline, <strong>Enter</strong>
-							to save.</li>
-					</ul>
-				</div>
-			</details>
-
-			<details class="release">
-				<summary>
-					<span class="ver">0.4.3</span>
-				</summary>
-				<div class="body">
-					<ul>
-						<li>Clicking a pill cell again now closes its tag selector
-							(previously only an outside click or <strong>Esc</strong>
-							would).</li>
-						<li>The inline text/number edit box now matches the size of the
-							cell you click, instead of a fixed size.</li>
-					</ul>
-				</div>
-			</details>
-
-			<details class="release">
-				<summary>
-					<span class="ver">0.4.2</span>
-				</summary>
-				<div class="body">
-					<ul>
-						<li>The optional Notion-style toolbar snippet no longer uses the
-							<code>:has()</code> selector, avoiding the performance cost of
-							broad selector invalidation. Once enabled, the snippet now
-							restyles every Bases toolbar (not just GoodBases views).</li>
-					</ul>
-				</div>
-			</details>
-
-			<details class="release">
-				<summary>
-					<span class="ver">0.4.1</span>
-				</summary>
-				<div class="body">
-					<ul>
-						<li>The Notion-style toolbar restyle (the blue “New” button
-							and icon-only Sort / Filter / Properties / Search) is now an
-							optional CSS snippet instead of shipping in the plugin, so
-							GoodBases no longer restyles Obsidian's core UI. See the
-							<a href="https://github.com/FrancescoUmberto/GoodBases#optional-notion-style-toolbar">README</a>
-							for how to enable it.</li>
-					</ul>
-				</div>
-			</details>
-
-			<details class="release" open>
-				<summary>
-					<span class="ver">0.4.0</span>
-					<span class="tag major">Major</span>
-				</summary>
-				<div class="body">
-					<p class="headline">🎨 <strong>New — per-value color picker.</strong>
-						Click the colored square next to any value in the pill
-						select menu and pick a color from Notion's palette. Your
-						choice is saved and applies everywhere that value appears.</p>
-					<img class="shot" src="asset/color_picker.gif" alt="Picking a pill color from the select menu">
-					<img class="shot" src="asset/button.png" alt="The restyled Bases toolbar with a Notion-like blue New button">
-					<p>Also in this release:</p>
-					<ul>
-						<li>Cell content now wraps by default.</li>
-						<li>Colored pills use Notion's exact light- and dark-mode
-							palette values.</li>
-						<li>Restyled the Bases toolbar for the Notion-style view — a
-							Notion-like blue “New” button and icon-only Sort / Filter /
-							Properties / Search, scoped so it only affects this
-							plugin's views.</li>
-						<li>Fixed: the inline edit box no longer lingers after you
-							click away from a cell without changing it.</li>
-					</ul>
-					
-				</div>
-			</details>
-
-			<details class="release">
-				<summary><span class="ver">0.3.2</span></summary>
-				<div class="body">
-					<ul>
-						<li>Added the project landing page, demo GIF, and a Buy Me a
-							Coffee funding link.</li>
-					</ul>
-				</div>
-			</details>
-
-			<details class="release">
-				<summary><span class="ver">0.3.1</span></summary>
-				<div class="body">
-					<ul>
-						<li>Initial release: Notion-style table view — colored pills,
-							inline cell editing, the pill select editor, pinned pill
-							colors, hover-reveal OPEN button, grouping support, and view
-							options.</li>
-					</ul>
+					<p>Inherited history from <a href="https://github.com/FrancescoUmberto/GoodBases/releases">GoodBases</a>,
+						the upstream project this plugin forked from — the Notion-style
+						table, colored pills, the select editor, the per-value color
+						picker, and the page panel. See the
+						<a href="https://github.com/lucytheboss/extended-base#changelog">full changelog</a>
+						for the details.</p>
 				</div>
 			</details>
 
@@ -376,47 +277,56 @@
 		<h3><span class="pill blue">1</span> From Obsidian's Community plugins</h3>
 		<ol class="steps">
 			<li>Open <strong>Settings → Community plugins → Browse</strong>.</li>
-			<li>Search for <strong><a href="https://community.obsidian.md/plugins/good-bases">GoodBases</a></strong>, then click
+			<li>Search for <strong>Extended Base</strong>, then click
 				<strong>Install</strong> and <strong>Enable</strong>.</li>
-			<li>Open the view selector and pick
-				<strong>Notion-style table</strong>.</li>
+			<li>In any Base, open the view selector and pick
+				<strong>Notion Table</strong>, <strong>Notion List</strong>, or
+				<strong>Notion Board</strong>.</li>
 		</ol>
 		<h3><span class="pill green">2</span> Manual install from the repository</h3>
 		<ol class="steps">
 			<li>Download <code>main.js</code>, <code>manifest.json</code>, and
 				<code>styles.css</code> from the
-				<a href="https://github.com/FrancescoUmberto/GoodBases/releases/latest">latest release</a>.</li>
-			<li>Put them in <code>VaultRoot/.obsidian/plugins/good-bases/</code>.</li>
-			<li>Reload Obsidian and enable <strong>GoodBases</strong> in
+				<a href="https://github.com/lucytheboss/extended-base/releases/latest">latest release</a>.</li>
+			<li>Put them in <code>VaultRoot/.obsidian/plugins/extended-base/</code>.</li>
+			<li>Reload Obsidian and enable <strong>Extended Base</strong> in
 				<strong>Settings → Community plugins</strong>.</li>
-			<li>In any Base, open the view selector and pick
-				<strong>Notion-style table</strong>.</li>
+			<li>In any Base, open the view selector and pick one of the three
+				views.</li>
 		</ol>
 	</section>
 
-	<section id="support">
-		<h2>Support</h2>
+	<section id="credits">
+		<h2>Credits</h2>
 		<div class="support">
 			<p>
-				GoodBases is built and maintained in my spare time, and it will
-				always be free. If it makes your vault a little nicer to work
-				in, a coffee goes toward new features — column resizing,
-				calculated footers, editable tags — and keeping up with
-				Obsidian's API changes.
+				Extended Base is built and maintained by
+				<a href="https://github.com/lucytheboss">Lucy Roh</a> in her spare
+				time, and it will always be free. It is a fork of
+				<strong><a href="https://github.com/FrancescoUmberto/GoodBases">GoodBases</a></strong>
+				by <strong>Umberto Francesco Carolini</strong>, released under the
+				MIT license. The Notion-style table, colored pills, select editor,
+				and page panel are their work; this fork adds the List and Board
+				views, nested groups, and the column controls.
 			</p>
-			<a class="bmc" href="https://buymeacoffee.com/umbertofrancesco">☕ Buy me a coffee</a>
+			<p>If GoodBases is useful to you, you can support the original author
+				with a coffee.</p>
+			<a class="bmc" href="https://buymeacoffee.com/umbertofrancesco">☕ Support the original author</a>
 		</div>
 	</section>
 </main>
 
 <footer>
-	<a href="https://github.com/FrancescoUmberto/GoodBases/blob/main/LICENSE">MIT License</a>
-	· <a href="https://github.com/FrancescoUmberto/GoodBases">GitHub</a>
-	· <a href="https://buymeacoffee.com/umbertofrancesco">Buy me a coffee</a>
+	<a href="https://github.com/lucytheboss/extended-base/blob/main/LICENSE">MIT License</a>
+	· <a href="https://github.com/lucytheboss/extended-base">GitHub</a>
+	· <a href="https://github.com/lucytheboss/extended-base/issues">Issues</a>
+	<br><br>
+	MIT © 2026 Umberto Francesco Carolini (the original GoodBases work) and
+	Lucy Roh (Extended Base modifications).
 	<br><br>
 	This plugin is not affiliated with, endorsed by, or sponsored by Notion
 	Labs, Inc. "Notion" is a trademark of Notion Labs, Inc.; it is used here
-	only to describe the visual style the view emulates.
+	only to describe the visual style the views emulate.
 </footer>
 
 </body>
