@@ -220,6 +220,22 @@ Source layout:
 
 ## Changelog
 
+### 1.0.2
+
+- **Fixed:** the **Default** swatch in the pill color picker followed the
+  light-mode palette even in dark mode; it now tracks the theme.
+- **Changed:** addressed the community plugin review lint — inline element
+  styles are gone in favour of CSS classes and `setCssProps` custom
+  properties, group toggles use `setText` instead of `innerHTML`, and the
+  property-type lookup moved into a typed helper
+  (`src/lib/property-types.ts`) shared by all three views.
+- **Changed:** `styles.css` and the toolbar snippet no longer use
+  `!important` — overrides win by selector specificity instead.
+- **Changed:** note titles are underlined with `border-bottom` rather than
+  `text-decoration-*` longhands, which Obsidian only partially supports.
+
+No functional changes beyond the color-picker fix.
+
 ### 1.0.1
 
 **New — two more views.**

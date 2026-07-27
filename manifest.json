@@ -1,7 +1,7 @@
 {
 	"id": "extended-base",
 	"name": "Extended Base",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "1.10.2",
 	"description": "An Extended Base view with column wrap, top-aligned cells, and transparent background.",
 	"author": "Lucy Roh",
