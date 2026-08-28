@@ -143,7 +143,7 @@ export class NotionTableView extends BasesView {
 				menu.addItem((item) => {
 					item.setTitle('Change icon')
 						.setIcon('smile')
-						.onClick(() => this.openIconPicker(th, prop));
+						.onClick(() => this.openIconPicker(iconSpan, prop));
 				});
 				menu.addItem((item) => {
 					item.setTitle('Change property name')
@@ -522,9 +522,9 @@ export class NotionTableView extends BasesView {
 		});
 	}
 
-	/** A searchable Lucide icon grid, floated below the header; picking one overrides that column's icon. */
-	private openIconPicker(th: HTMLElement, prop: BasesPropertyId): void {
-		const doc = th.doc;
+	/** A searchable Lucide icon grid, floated just below `anchor` (the column's icon glyph). */
+	private openIconPicker(anchor: HTMLElement, prop: BasesPropertyId): void {
+		const doc = anchor.doc;
 		doc.querySelector('.ntn-icon-menu')?.remove();
 
 		const menu = doc.body.createDiv({ cls: 'ntn-root ntn-icon-menu' });
@@ -554,8 +554,8 @@ export class NotionTableView extends BasesView {
 		searchEl.addEventListener('input', () => renderGrid(searchEl.value));
 		searchEl.focus();
 
-		const rect = th.getBoundingClientRect();
-		const win = th.win;
+		const rect = anchor.getBoundingClientRect();
+		const win = anchor.win;
 		const menuWidth = 260;
 		const left = Math.min(rect.left, win.innerWidth - menuWidth - 8);
 		menu.setCssStyles({ left: `${Math.max(8, left)}px`, top: `${rect.bottom + 4}px` });
@@ -581,8 +581,15 @@ export class NotionTableView extends BasesView {
 		// Dummy cell for the hidden dummy column
 		tr.createEl('td', { cls: 'ntn-td ntn-col-title ntn-col-dummy' });
 
+		const widths = this.config.get('columnWidths') as Record<string, number> || {};
 		for (const prop of props) {
 			const td = tr.createEl('td', { cls: 'ntn-td' });
+			// Mirror the header's resized width onto the cell: the stylesheet's
+			// default max-width (280px) only applies while this is unset, so a
+			// resized column — the title/file-name one included — isn't capped
+			// back down to 280px regardless of how far the header was dragged.
+			const width = widths[prop];
+			if (width) td.setCssProps({ '--ntn-col-width': `${width}px` });
 			if ((this.config.get('wrapColumns') as string[] || [])?.includes(prop)) {
 				td.addClass('ntn-wrap-cell');
 			}

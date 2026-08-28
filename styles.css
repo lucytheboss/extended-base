@@ -168,7 +168,13 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 280px;
+	/* Default cap for an unresized column, so a long value doesn't blow the
+	   column out before the user has dragged its header wider. Once a
+	   column has been resized, renderRow mirrors its width onto each td as
+	   --ntn-col-width, which overrides this default — a bare max-width here
+	   would otherwise cap every column (including the title/file-name one)
+	   at 280px forever, no matter how far the header is dragged. */
+	max-width: var(--ntn-col-width, 280px);
 }
 
 /* Rendered values (links, dates…) carry their own white-space and
