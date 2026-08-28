@@ -22,7 +22,6 @@ import {
 	setIcon,
 } from 'obsidian';
 import { LOG_PREFIX } from '../constants';
-import { stripPath } from '../lib/pills';
 import { splitFrontmatter } from '../lib/frontmatter';
 
 /** What the select editor needs to open anchored to a property row / cell. */
@@ -282,8 +281,11 @@ export class NotePageModal extends Modal {
 		}
 
 		// ---- Plain values: click-to-edit inline ----
+		// No stripPath here: these are raw frontmatter scalars (text, numbers,
+		// dates), not link/file paths, so a "/" in the value is real content,
+		// not a path separator to truncate.
 		if (this.isEmpty(value)) this.renderEmpty(valueEl);
-		else valueEl.createSpan({ text: stripPath(this.formatScalar(value)) });
+		else valueEl.createSpan({ text: this.formatScalar(value) });
 		if (editable) {
 			valueEl.addClass('ntn-page-prop-editable');
 			valueEl.addEventListener('click', () => this.editScalar(valueEl, key, value));

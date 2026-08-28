@@ -8,6 +8,8 @@ import {
 	BasesPropertyId,
 	BasesView,
 	BooleanValue,
+	FileValue,
+	LinkValue,
 	Notice,
 	NumberValue,
 	Platform,
@@ -245,7 +247,13 @@ export class NotionListView extends BasesView {
 		// ---- Plain values: native render, click-to-edit for note.* ----
 		const cellEl = td.createDiv({ cls: 'ntn-cell' });
 		if (value != null) { // Handle both null and undefined
-			const strVal = stripPath(value.toString());
+			const raw = value.toString();
+			// stripPath is for link/file paths only ("Folder/Note" -> "Note");
+			// applying it to freeform text truncates any value that happens to
+			// contain a "/" (a fraction, a date, a unit like "km/h", …).
+			const strVal = (value instanceof LinkValue || value instanceof FileValue)
+				? stripPath(raw)
+				: raw;
 			const metaType = getPropertyMetaType(this.app, prop);
 			if (strVal && (!metaType || metaType === 'text' || metaType === 'multitext')) {
 				void MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
@@ -495,8 +503,23 @@ export class NotionListView extends BasesView {
 				void this.writeProperty(opts.file, opts.propName, value)
 					.then(() => opts.onWrite?.()),
 			setColor: (value, colorName) => this.setPinnedColor(value, colorName),
+			getOrder: () => this.getSelectOptionOrder(opts.propName),
+			setOrder: (order) => this.setSelectOptionOrder(opts.propName, order),
 			onClose: () => { this.selectEditor = null; },
 		});
+	}
+
+	/** Saved option order for a select/pill property (lowercased value keys). */
+	private getSelectOptionOrder(propName: string): string[] {
+		const map = this.config.get('selectOrders') as Record<string, string[]> | undefined;
+		const order = map?.[propName];
+		return Array.isArray(order) ? order.map((s) => String(s).toLowerCase()) : [];
+	}
+
+	/** Persist a select/pill property's option order, keyed by its bare name. */
+	private setSelectOptionOrder(propName: string, order: string[]): void {
+		const current = this.config.get('selectOrders') as Record<string, string[]> || {};
+		this.config.set('selectOrders', { ...current, [propName]: order });
 	}
 
 	/**

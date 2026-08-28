@@ -3,26 +3,22 @@
    Typography, borders, hover states, and pills match Notion.
    ============================================================ */
 
+/* Colors come from Obsidian's own theme variables (not a fixed Notion
+   palette) so the view always matches whatever theme + light/dark mode the
+   user has configured, instead of a hardcoded light/dark pair of its own. */
 .ntn-root {
-	--ntn-text: rgb(55, 53, 47);
-	--ntn-text-muted: rgba(55, 53, 47, 0.65);
-	--ntn-border: rgb(233, 233, 231);
-	--ntn-hover: rgba(55, 53, 47, 0.04);
-	--ntn-active: rgba(55, 53, 47, 0.08);
+	--ntn-text: var(--text-normal);
+	--ntn-text-muted: var(--text-muted);
+	--ntn-border: var(--background-modifier-border);
+	--ntn-hover: var(--background-modifier-hover);
+	--ntn-active: var(--background-modifier-active-hover, var(--background-modifier-hover));
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
 		Arial, sans-serif;
 	font-size: 14px;
 	color: var(--ntn-text);
+	background: var(--background-primary);
 	overflow-x: auto;
 	padding-bottom: 24px;
-}
-
-.theme-dark .ntn-root {
-	--ntn-text: rgba(255, 255, 255, 0.81);
-	--ntn-text-muted: rgba(255, 255, 255, 0.443);
-	--ntn-border: rgb(47, 47, 47);
-	--ntn-hover: rgba(255, 255, 255, 0.055);
-	--ntn-active: rgba(255, 255, 255, 0.03);
 }
 
 /* ---------------- Table chrome ---------------- */
@@ -102,11 +98,56 @@
 	overflow-wrap: normal;
 }
 
+/* Icon + title + sort arrow, aligned on one baseline; also the click-to-sort
+   / press-and-drag-to-reorder target (see NotionTableView.setupHeaderInteraction). */
+.ntn-th-title {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	cursor: pointer;
+}
+
 .ntn-th-icon {
+	display: inline-flex;
+	align-items: center;
 	font-size: 12px;
 	margin-right: 6px;
 	opacity: 0.7;
 	letter-spacing: 0.5px;
+	flex-shrink: 0;
+}
+
+.ntn-th-sort-icon {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 4px;
+	opacity: 0.8;
+	flex-shrink: 0;
+}
+
+.ntn-th-sort-icon svg,
+.ntn-th-icon svg {
+	width: 12px;
+	height: 12px;
+}
+
+.ntn-th-title-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Dragged header: dim it while a drop target elsewhere shows where it lands. */
+.ntn-th-dragging {
+	opacity: 0.5;
+}
+
+.ntn-col-drop-before {
+	box-shadow: inset 2px 0 0 0 var(--interactive-accent);
+}
+
+.ntn-col-drop-after {
+	box-shadow: inset -2px 0 0 0 var(--interactive-accent);
 }
 
 .ntn-vlines .ntn-th,
@@ -343,6 +384,34 @@
 	font-size: 14px;
 }
 
+/* MarkdownRenderer wraps rendered text in a <p> (and lists/headings carry
+   their own block margins). Left unset, those margins push a cell's content
+   up or down relative to sibling columns that render without one (dates,
+   numbers, pills, plain `renderTo` values) — the classic "rows don't line
+   up" symptom. Zero them out so every cell's content sits flush at the
+   cell's own padding, matching plain cells exactly. Wrapped cells restore a
+   small margin below (see .ntn-wrap-cell p) once multi-line content needs
+   breathing room between paragraphs. */
+.ntn-cell > :first-child {
+	margin-top: 0;
+}
+
+.ntn-cell > :last-child {
+	margin-bottom: 0;
+}
+
+.ntn-cell p,
+.ntn-cell ul,
+.ntn-cell ol,
+.ntn-cell h1,
+.ntn-cell h2,
+.ntn-cell h3,
+.ntn-cell h4,
+.ntn-cell h5,
+.ntn-cell h6 {
+	margin: 0;
+}
+
 /* ---------------- Inline editing ---------------- */
 
 .ntn-editable {
@@ -489,6 +558,39 @@
 	flex: 0 0 16px; /* Match check width for alignment */
 }
 
+/* Reorder handle: hidden until the row is hovered, so the list doesn't look
+   cluttered when the user is just picking a value. */
+.ntn-select-grip {
+	flex: 0 0 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--ntn-text-muted);
+	opacity: 0;
+	cursor: grab;
+}
+
+.ntn-select-grip svg {
+	width: 12px;
+	height: 12px;
+}
+
+.ntn-select-option:hover .ntn-select-grip {
+	opacity: 0.6;
+}
+
+.ntn-select-grip:hover {
+	opacity: 1;
+}
+
+.ntn-select-drop-before {
+	box-shadow: inset 0 2px 0 0 var(--interactive-accent);
+}
+
+.ntn-select-drop-after {
+	box-shadow: inset 0 -2px 0 0 var(--interactive-accent);
+}
+
 .ntn-select-empty {
 	padding: 6px;
 	color: var(--ntn-text-muted);
@@ -568,6 +670,57 @@
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+/* Column header context menu -> "Change icon": a searchable icon grid. */
+.ntn-icon-menu {
+	position: fixed;
+	z-index: var(--layer-menu, 30);
+	background: var(--background-primary);
+	border-radius: 8px;
+	box-shadow: rgba(15, 15, 15, 0.05) 0 0 0 1px,
+		rgba(15, 15, 15, 0.1) 0 3px 6px,
+		rgba(15, 15, 15, 0.2) 0 9px 24px;
+	width: 260px;
+	padding: 8px;
+}
+
+.ntn-icon-search {
+	width: 100%;
+	box-sizing: border-box;
+	border: none;
+	outline: none;
+	background: var(--ntn-hover);
+	border-radius: 6px;
+	padding: 6px 8px;
+	margin-bottom: 6px;
+	font-family: inherit;
+	font-size: 13px;
+	color: var(--ntn-text);
+}
+
+.ntn-icon-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.ntn-icon-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 1;
+	border-radius: 4px;
+	color: var(--ntn-text-muted);
+	cursor: pointer;
+	transition: background 20ms ease-in;
+}
+
+.ntn-icon-option:hover {
+	background: var(--ntn-hover);
+	color: var(--ntn-text);
+}
+
 .ntn-checkbox {
 	appearance: auto;
 	width: 16px;
@@ -589,22 +742,15 @@
    .modal class is doubled in so the size overrides outrank core's .modal
    width/max-width without !important. */
 .modal.ntn-page-modal {
-	--ntn-text: rgb(55, 53, 47);
-	--ntn-text-muted: rgba(55, 53, 47, 0.65);
-	--ntn-border: rgb(233, 233, 231);
-	--ntn-hover: rgba(55, 53, 47, 0.04);
+	--ntn-text: var(--text-normal);
+	--ntn-text-muted: var(--text-muted);
+	--ntn-border: var(--background-modifier-border);
+	--ntn-hover: var(--background-modifier-hover);
 	width: min(900px, 90vw);
 	max-width: 90vw;
 	height: min(85vh, 720px);
 	max-height: 85vh;
 	padding: 0;
-}
-
-.theme-dark .modal.ntn-page-modal {
-	--ntn-text: rgba(255, 255, 255, 0.81);
-	--ntn-text-muted: rgba(255, 255, 255, 0.443);
-	--ntn-border: rgb(47, 47, 47);
-	--ntn-hover: rgba(255, 255, 255, 0.055);
 }
 
 /* Open-in-new-tab button, sitting just left of the modal's own close X

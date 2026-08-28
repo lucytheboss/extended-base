@@ -10,7 +10,7 @@
  * objects, so it survives the view's `onDataUpdated` re-renders. The owning
  * view drives lifetime — outside-click and unload both call {@link close}.
  */
-import { BasesEntry, BasesPropertyId, TFile } from 'obsidian';
+import { BasesEntry, BasesPropertyId, TFile, setIcon } from 'obsidian';
 import { NOTION_COLORS, applyColorVars } from '../lib/colors';
 import { valueToStrings } from '../lib/values';
 
@@ -37,6 +37,14 @@ export interface SelectEditorDeps {
 	write: (value: unknown) => void;
 	/** Pin a value to a specific Notion color name (e.g. `"green"`). */
 	setColor: (value: string, colorName: string) => void;
+	/**
+	 * The user's saved option order for this property (lowercased value
+	 * keys), most-significant first. Drives both the order options list in
+	 * and column sort-by-this-property elsewhere.
+	 */
+	getOrder: () => string[];
+	/** Persist a new option order (lowercased value keys). */
+	setOrder: (order: string[]) => void;
 	/** Invoked once when the menu closes, so the owner can drop its reference. */
 	onClose: () => void;
 }
@@ -51,6 +59,8 @@ export class SelectEditor {
 	private selected: string[];
 	/** Distinct known values for this property: lowercase key → display text. */
 	private readonly known = new Map<string, string>();
+	/** Display order for `known`, lowercase keys, user-arranged via drag. */
+	private orderKeys: string[];
 
 	private pillsWrap!: HTMLElement;
 	private optionsEl!: HTMLElement;
@@ -69,9 +79,19 @@ export class SelectEditor {
 		}
 
 		this.selected = current.map((s) => s.replace(/^#/, ''));
+		this.orderKeys = this.buildInitialOrder();
 
 		this.menu = this.build();
 		this.position();
+	}
+
+	/** The saved order, plus any known value it doesn't mention yet, appended at the end. */
+	private buildInitialOrder(): string[] {
+		const stored = this.deps.getOrder().filter((k) => this.known.has(k));
+		const seen = new Set(stored);
+		const ordered = [...stored];
+		for (const key of this.known.keys()) if (!seen.has(key)) ordered.push(key);
+		return ordered;
 	}
 
 	/** Whether the given node lives inside the menu or its color flyout. */
@@ -170,7 +190,10 @@ export class SelectEditor {
 			this.selected = has
 				? this.selected.filter((s) => s.toLowerCase() !== v.toLowerCase())
 				: [...this.selected, v];
-			if (!this.known.has(v.toLowerCase())) this.known.set(v.toLowerCase(), v);
+			if (!this.known.has(v.toLowerCase())) {
+				this.known.set(v.toLowerCase(), v);
+				this.orderKeys.push(v.toLowerCase());
+			}
 			this.write();
 			this.input.value = '';
 			this.renderPills();
@@ -183,16 +206,83 @@ export class SelectEditor {
 		}
 	}
 
+	/** Move `key` next to `targetKey` (before/after) and persist the new order. */
+	private reorderOption(key: string, targetKey: string, after: boolean): void {
+		this.orderKeys = this.orderKeys.filter((k) => k !== key);
+		let idx = this.orderKeys.indexOf(targetKey);
+		if (idx === -1) idx = this.orderKeys.length;
+		if (after) idx += 1;
+		this.orderKeys.splice(idx, 0, key);
+		this.deps.setOrder(this.orderKeys);
+		this.renderOptions();
+	}
+
+	/** Press-and-drag on a row's grip handle to reorder the option list. */
+	private startOptionDrag(startEvt: PointerEvent, key: string): void {
+		const doc = this.deps.doc;
+		const startX = startEvt.clientX;
+		const startY = startEvt.clientY;
+		let dragging = false;
+		let dropRow: HTMLElement | null = null;
+		let insertAfter = false;
+
+		const clearIndicator = () => {
+			dropRow?.removeClass('ntn-select-drop-before');
+			dropRow?.removeClass('ntn-select-drop-after');
+			dropRow = null;
+		};
+
+		const onMove = (ev: PointerEvent) => {
+			if (!dragging) {
+				if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
+				dragging = true;
+			}
+			const el = doc.elementFromPoint(ev.clientX, ev.clientY);
+			const row = el?.closest('.ntn-select-option') as HTMLElement | null;
+			clearIndicator();
+			const targetKey = row?.getAttr('data-ntn-key');
+			if (row && targetKey && targetKey !== key) {
+				const rect = row.getBoundingClientRect();
+				insertAfter = ev.clientY > rect.top + rect.height / 2;
+				row.addClass(insertAfter ? 'ntn-select-drop-after' : 'ntn-select-drop-before');
+				dropRow = row;
+			}
+		};
+
+		const onUp = () => {
+			doc.removeEventListener('pointermove', onMove);
+			doc.removeEventListener('pointerup', onUp);
+			const targetKey = dropRow?.getAttr('data-ntn-key');
+			clearIndicator();
+			if (dragging && targetKey && targetKey !== key) {
+				this.reorderOption(key, targetKey, insertAfter);
+			}
+		};
+
+		doc.addEventListener('pointermove', onMove);
+		doc.addEventListener('pointerup', onUp);
+	}
+
 	private renderOptions(): void {
 		this.closeColorMenu();
 		this.optionsEl.empty();
 		const q = this.input.value.trim();
 		const ql = q.toLowerCase();
-		const visible = [...this.known.values()]
-			.filter((o) => !ql || o.toLowerCase().includes(ql))
-			.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-		for (const o of visible) {
-			const row = this.optionsEl.createDiv({ cls: 'ntn-select-option' });
+		const visible = this.orderKeys
+			.filter((key) => this.known.has(key))
+			.map((key) => [key, this.known.get(key) as string] as const)
+			.filter(([, o]) => !ql || o.toLowerCase().includes(ql));
+		for (const [key, o] of visible) {
+			const row = this.optionsEl.createDiv({ cls: 'ntn-select-option', attr: { 'data-ntn-key': key } });
+
+			// 0. Drag handle (hidden until hover — see styles.css)
+			const grip = row.createSpan({ cls: 'ntn-select-grip', attr: { 'aria-label': 'Drag to reorder' } });
+			setIcon(grip, 'grip-vertical');
+			grip.addEventListener('pointerdown', (evt) => {
+				evt.stopPropagation();
+				this.startOptionDrag(evt, key);
+			});
+			grip.addEventListener('click', (evt) => evt.stopPropagation());
 
 			// 1. Check mark (left)
 			const isSelected = this.selected.some((s) => s.toLowerCase() === o.toLowerCase());
@@ -218,6 +308,7 @@ export class SelectEditor {
 		}
 		if (q && !this.known.has(ql)) {
 			const row = this.optionsEl.createDiv({ cls: 'ntn-select-option' });
+			row.createSpan({ cls: 'ntn-select-grip' }); // Empty: align with the grip column
 			row.createSpan({ cls: 'ntn-select-create', text: '+' }); // Align with check
 			const pill = row.createSpan({ cls: 'ntn-pill' });
 			this.deps.applyColor(pill, q);

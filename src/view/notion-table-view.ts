@@ -8,6 +8,8 @@ import {
 	BasesPropertyId,
 	BasesView,
 	BooleanValue,
+	FileValue,
+	LinkValue,
 	Notice,
 	NumberValue,
 	Platform,
@@ -15,6 +17,7 @@ import {
 	TFile,
 	Menu,
 	MarkdownRenderer,
+	getIconIds,
 	setIcon,
 } from 'obsidian';
 import { LOG_PREFIX, NOTION_TABLE_VIEW } from '../constants';
@@ -85,9 +88,10 @@ export class NotionTableView extends BasesView {
 		root.toggleClass('ntn-wrap', this.config.get('wrapCells') !== false);
 		root.toggleClass('ntn-vlines', this.config.get('verticalLines') !== false);
 
-		const props = this.config.getOrder();
+		const props = this.applyColumnOrder(this.config.getOrder());
 		this.pills = computePillProps(props, this.data.data, this.config, this.app);
 		this.pinnedColors = parsePinnedColors(this.config.get('pinnedColors'));
+		const sortState = this.getSortState();
 
 		const table = root.createEl('table', { cls: 'ntn-table' });
 
@@ -100,43 +104,55 @@ export class NotionTableView extends BasesView {
 		// Dummy column to preserve Bases core drag-and-drop index offset (ignores first column)
 		headRow.createEl('th', { cls: 'ntn-th ntn-col-title ntn-col-dummy' });
 
+		const columnIcons = this.config.get('columnIcons') as Record<string, string> || {};
+
 		for (const prop of props) {
-			const th = headRow.createEl('th', { cls: 'ntn-th' });
-			const icon = getPropertyIcon(this.app, prop);
-			const iconSpan = th.createSpan({ cls: 'ntn-th-icon' });
+			const th = headRow.createEl('th', { cls: 'ntn-th', attr: { 'data-ntn-prop': prop } });
+
+			// Icon + title live in one flex wrapper so they line up on a shared
+			// baseline (this is also the click-to-sort / press-and-drag-to-reorder
+			// target — the resizer handle sits outside it).
+			const titleWrap = th.createDiv({ cls: 'ntn-th-title' });
+
+			const icon = columnIcons[prop] || getPropertyIcon(this.app, prop);
+			const iconSpan = titleWrap.createSpan({ cls: 'ntn-th-icon' });
 			setIcon(iconSpan, icon);
 
 			const titleText = customNames[prop] || this.config.getDisplayName(prop);
-			const titleSpan = th.createSpan({ text: titleText, cls: 'ntn-th-title-text' });
+			const titleSpan = titleWrap.createSpan({ text: titleText, cls: 'ntn-th-title-text' });
 
-			// Feature 2: Double click to rename
+			if (sortState?.prop === prop) {
+				const sortIcon = titleWrap.createSpan({ cls: 'ntn-th-sort-icon' });
+				setIcon(sortIcon, sortState.direction === 'asc' ? 'arrow-up' : 'arrow-down');
+			}
+
+			// Double-click (or the context menu below) to rename.
 			titleSpan.addEventListener('dblclick', (e) => {
 				e.stopPropagation();
-				titleSpan.empty();
-				const input = titleSpan.createEl('input', { type: 'text', value: titleText, cls: 'ntn-rename-input' });
-				input.focus();
-				const save = () => {
-					const newName = input.value.trim();
-					if (newName && newName !== this.config.getDisplayName(prop)) {
-						const current = this.config.get('columnNames') as Record<string, string> || {};
-						this.config.set('columnNames', { ...current, [prop]: newName });
-					} else if (!newName || newName === this.config.getDisplayName(prop)) {
-						const current = this.config.get('columnNames') as Record<string, string> || {};
-						delete current[prop];
-						this.config.set('columnNames', current);
-					}
-				};
-				input.addEventListener('blur', save);
-				input.addEventListener('keydown', (ke) => {
-					if (ke.key === 'Enter') save();
-					if (ke.key === 'Escape') this.config.set('columnNames', this.config.get('columnNames')); // Force re-render
-				});
+				this.startRename(titleSpan, prop, titleText);
 			});
 
-			// Feature 6: Context menu for Wrap
+			// Click to sort by this column; press-and-drag to reorder columns.
+			this.setupHeaderInteraction(th, titleWrap, prop, props);
+
+			// Context menu: icon, rename, wrap, colors.
 			th.addEventListener('contextmenu', (e) => {
 				e.preventDefault();
 				const menu = new Menu();
+
+				menu.addItem((item) => {
+					item.setTitle('Change icon')
+						.setIcon('smile')
+						.onClick(() => this.openIconPicker(th, prop));
+				});
+				menu.addItem((item) => {
+					item.setTitle('Change property name')
+						.setIcon('pencil')
+						.onClick(() => this.startRename(titleSpan, prop, titleText));
+				});
+
+				menu.addSeparator();
+
 				const isWrapped = wrapColumns.includes(prop);
 				menu.addItem((item) => {
 					item.setTitle(isWrapped ? 'Disable Wrap' : 'Enable Wrap')
@@ -176,6 +192,9 @@ export class NotionTableView extends BasesView {
 		const limit = limitRaw === 'all' ? 'all' : parseInt(String(limitRaw), 10) || 50;
 
 		const roots = buildGroupTree(this.data.groupedData);
+		if (sortState) {
+			for (const rootNode of roots.values()) this.applySortToTree(rootNode, sortState);
+		}
 
 		const renderNode = (node: GroupNode, depth: number) => {
 			if (limit !== 'all' && renderedCount >= limit) return;
@@ -299,6 +318,259 @@ export class NotionTableView extends BasesView {
 		});
 	}
 
+	/** Apply the user's saved column order on top of Bases' own property order. */
+	private applyColumnOrder(props: BasesPropertyId[]): BasesPropertyId[] {
+		const stored = this.config.get('columnOrder') as string[] | undefined;
+		if (!Array.isArray(stored) || !stored.length) return props;
+		const propSet = new Set(props);
+		const ordered = stored.filter((p) => propSet.has(p as BasesPropertyId)) as BasesPropertyId[];
+		const seen = new Set(ordered);
+		for (const p of props) if (!seen.has(p)) ordered.push(p);
+		return ordered;
+	}
+
+	/** Move `fromProp` next to `toProp` (before/after) and persist the new order. */
+	private reorderColumn(props: BasesPropertyId[], fromProp: BasesPropertyId, toProp: BasesPropertyId, after: boolean): void {
+		const without = props.filter((p) => p !== fromProp);
+		let toIndex = without.indexOf(toProp);
+		if (toIndex === -1) return;
+		if (after) toIndex += 1;
+		without.splice(toIndex, 0, fromProp);
+		this.config.set('columnOrder', without);
+	}
+
+	/** The current header-click sort, if any. */
+	private getSortState(): { prop: BasesPropertyId; direction: 'asc' | 'desc' } | null {
+		const raw = this.config.get('ntnSort') as { prop?: string; direction?: string } | null | undefined;
+		if (!raw || !raw.prop) return null;
+		return { prop: raw.prop as BasesPropertyId, direction: raw.direction === 'desc' ? 'desc' : 'asc' };
+	}
+
+	/** Cycle a column's sort: none -> ascending -> descending -> none. Single-column, like Notion. */
+	private toggleSort(prop: BasesPropertyId): void {
+		const current = this.getSortState();
+		let next: { prop: BasesPropertyId; direction: 'asc' | 'desc' } | null;
+		if (!current || current.prop !== prop) {
+			next = { prop, direction: 'asc' };
+		} else if (current.direction === 'asc') {
+			next = { prop, direction: 'desc' };
+		} else {
+			next = null;
+		}
+		this.config.set('ntnSort', next);
+	}
+
+	/**
+	 * A plain click sorts; a click that turns into a drag reorders. Both
+	 * gestures start the same way, so tell them apart by movement past a
+	 * small threshold, then commit to one interpretation for the gesture.
+	 * The second click of a double-click (renaming) is swallowed by the
+	 * pending-timer dance in {@link scheduleSortToggle} so it never sorts.
+	 */
+	private setupHeaderInteraction(
+		th: HTMLElement,
+		titleWrap: HTMLElement,
+		prop: BasesPropertyId,
+		props: BasesPropertyId[],
+	): void {
+		const THRESHOLD = 6;
+		const doc = th.doc;
+
+		titleWrap.addEventListener('pointerdown', (e: PointerEvent) => {
+			if (e.button !== 0) return;
+			// Let a click inside the active rename input place the caret instead
+			// of scheduling a sort toggle or starting a column drag.
+			if ((e.target as HTMLElement).closest('.ntn-rename-input')) return;
+			const startX = e.clientX;
+			const startY = e.clientY;
+			let dragging = false;
+			let dropTarget: HTMLElement | null = null;
+			let insertAfter = false;
+
+			const clearIndicator = () => {
+				dropTarget?.removeClass('ntn-col-drop-before');
+				dropTarget?.removeClass('ntn-col-drop-after');
+				dropTarget = null;
+			};
+
+			const onMove = (ev: PointerEvent) => {
+				if (!dragging) {
+					if (Math.abs(ev.clientX - startX) < THRESHOLD && Math.abs(ev.clientY - startY) < THRESHOLD) return;
+					dragging = true;
+					th.addClass('ntn-th-dragging');
+				}
+				const el = doc.elementFromPoint(ev.clientX, ev.clientY);
+				const targetTh = el?.closest('th.ntn-th') as HTMLElement | null;
+				clearIndicator();
+				if (targetTh && targetTh !== th && !targetTh.hasClass('ntn-col-dummy')) {
+					const rect = targetTh.getBoundingClientRect();
+					insertAfter = ev.clientX > rect.left + rect.width / 2;
+					targetTh.addClass(insertAfter ? 'ntn-col-drop-after' : 'ntn-col-drop-before');
+					dropTarget = targetTh;
+				}
+			};
+
+			const onUp = () => {
+				doc.removeEventListener('pointermove', onMove);
+				doc.removeEventListener('pointerup', onUp);
+				th.removeClass('ntn-th-dragging');
+				const targetProp = dropTarget?.getAttr('data-ntn-prop') as BasesPropertyId | null;
+				clearIndicator();
+				if (dragging && targetProp && targetProp !== prop) {
+					this.reorderColumn(props, prop, targetProp, insertAfter);
+				} else if (!dragging) {
+					this.scheduleSortToggle(prop);
+				}
+			};
+
+			doc.addEventListener('pointermove', onMove);
+			doc.addEventListener('pointerup', onUp);
+		});
+	}
+
+	/** Pending single-click sort toggle; a second click within the window cancels it (see {@link setupHeaderInteraction}). */
+	private sortClickTimer: number | null = null;
+
+	private scheduleSortToggle(prop: BasesPropertyId): void {
+		if (this.sortClickTimer !== null) {
+			window.clearTimeout(this.sortClickTimer);
+			this.sortClickTimer = null;
+			return;
+		}
+		this.sortClickTimer = window.setTimeout(() => {
+			this.sortClickTimer = null;
+			this.toggleSort(prop);
+		}, 250);
+	}
+
+	/** Sort every group's entries by `sortState`, recursing into nested groups. */
+	private applySortToTree(
+		node: GroupNode,
+		sortState: { prop: BasesPropertyId; direction: 'asc' | 'desc' },
+	): void {
+		const dir = sortState.direction === 'asc' ? 1 : -1;
+		node.entries.sort((a, b) => dir * this.compareEntries(a, b, sortState.prop));
+		for (const child of node.children.values()) this.applySortToTree(child, sortState);
+	}
+
+	/**
+	 * Compare two entries by one property. Pill/select columns with a
+	 * user-defined option order (see the select editor's drag handles)
+	 * sort by that order instead of alphabetically; numbers and booleans
+	 * compare numerically; everything else falls back to a locale/numeric
+	 * string compare (which also sorts ISO dates correctly).
+	 */
+	private compareEntries(a: BasesEntry, b: BasesEntry, prop: BasesPropertyId): number {
+		const va = a.getValue(prop);
+		const vb = b.getValue(prop);
+		if (va == null && vb == null) return 0;
+		if (va == null) return -1;
+		if (vb == null) return 1;
+
+		if (this.pills.pillProps.has(prop)) {
+			const order = this.getSelectOrder(prop);
+			if (order) {
+				const sa = (valueToStrings(va)[0] ?? '').toLowerCase();
+				const sb = (valueToStrings(vb)[0] ?? '').toLowerCase();
+				const ia = order.indexOf(sa);
+				const ib = order.indexOf(sb);
+				if (ia === -1 && ib === -1) return sa.localeCompare(sb);
+				if (ia === -1) return 1;
+				if (ib === -1) return -1;
+				return ia - ib;
+			}
+		}
+
+		if (va instanceof NumberValue && vb instanceof NumberValue) {
+			return Number(va.toString()) - Number(vb.toString());
+		}
+		if (va instanceof BooleanValue && vb instanceof BooleanValue) {
+			return Number(va.isTruthy()) - Number(vb.isTruthy());
+		}
+		return va.toString().localeCompare(vb.toString(), undefined, { sensitivity: 'base', numeric: true });
+	}
+
+	/** The user's saved option order for a select/pill property, or null if none is set. */
+	private getSelectOrder(prop: BasesPropertyId): string[] | null {
+		const bare = prop.split('.').slice(1).join('.');
+		const order = this.getSelectOptionOrder(bare);
+		return order.length ? order : null;
+	}
+
+	/** Swap a header title for an inline rename input; Enter/blur commits, Esc cancels. */
+	private startRename(titleSpan: HTMLElement, prop: BasesPropertyId, titleText: string): void {
+		if (titleSpan.querySelector('.ntn-rename-input')) return;
+		titleSpan.empty();
+		const input = titleSpan.createEl('input', { type: 'text', value: titleText, cls: 'ntn-rename-input' });
+		input.focus();
+		input.select();
+		const save = () => {
+			const newName = input.value.trim();
+			const current = this.config.get('columnNames') as Record<string, string> || {};
+			if (newName && newName !== this.config.getDisplayName(prop)) {
+				this.config.set('columnNames', { ...current, [prop]: newName });
+			} else {
+				const next = { ...current };
+				delete next[prop];
+				this.config.set('columnNames', next);
+			}
+		};
+		input.addEventListener('blur', save);
+		input.addEventListener('keydown', (ke) => {
+			if (ke.key === 'Enter') save();
+			if (ke.key === 'Escape') this.config.set('columnNames', this.config.get('columnNames')); // Force re-render
+		});
+	}
+
+	/** A searchable Lucide icon grid, floated below the header; picking one overrides that column's icon. */
+	private openIconPicker(th: HTMLElement, prop: BasesPropertyId): void {
+		const doc = th.doc;
+		doc.querySelector('.ntn-icon-menu')?.remove();
+
+		const menu = doc.body.createDiv({ cls: 'ntn-root ntn-icon-menu' });
+		const searchEl = menu.createEl('input', {
+			type: 'text',
+			cls: 'ntn-select-input ntn-icon-search',
+			attr: { placeholder: 'Search icons…', spellcheck: 'false' },
+		});
+		const gridEl = menu.createDiv({ cls: 'ntn-icon-grid' });
+
+		const allIcons = getIconIds();
+		const renderGrid = (query: string) => {
+			gridEl.empty();
+			const q = query.trim().toLowerCase();
+			const matches = (q ? allIcons.filter((id) => id.includes(q)) : allIcons).slice(0, 200);
+			for (const iconId of matches) {
+				const btn = gridEl.createDiv({ cls: 'ntn-icon-option', attr: { 'aria-label': iconId } });
+				setIcon(btn, iconId);
+				btn.addEventListener('click', () => {
+					const current = this.config.get('columnIcons') as Record<string, string> || {};
+					this.config.set('columnIcons', { ...current, [prop]: iconId });
+					close();
+				});
+			}
+		};
+		renderGrid('');
+		searchEl.addEventListener('input', () => renderGrid(searchEl.value));
+		searchEl.focus();
+
+		const rect = th.getBoundingClientRect();
+		const win = th.win;
+		const menuWidth = 260;
+		const left = Math.min(rect.left, win.innerWidth - menuWidth - 8);
+		menu.setCssStyles({ left: `${Math.max(8, left)}px`, top: `${rect.bottom + 4}px` });
+
+		const onOutside = (e: PointerEvent) => {
+			if (!menu.contains(e.target as Node)) close();
+		};
+		const close = () => {
+			menu.remove();
+			doc.removeEventListener('pointerdown', onOutside, true);
+		};
+		doc.addEventListener('pointerdown', onOutside, true);
+		this.register(close);
+	}
+
 	private renderRow(
 		tbody: HTMLElement,
 		entry: BasesEntry,
@@ -383,7 +655,13 @@ export class NotionTableView extends BasesView {
 		// ---- Plain values: native render, click-to-edit for note.* ----
 		const cellEl = td.createDiv({ cls: 'ntn-cell' });
 		if (value != null) { // Handle both null and undefined
-			const strVal = stripPath(value.toString());
+			const raw = value.toString();
+			// stripPath is for link/file paths only ("Folder/Note" -> "Note");
+			// applying it to freeform text truncates any value that happens to
+			// contain a "/" (a fraction, a date, a unit like "km/h", …).
+			const strVal = (value instanceof LinkValue || value instanceof FileValue)
+				? stripPath(raw)
+				: raw;
 			const metaType = getPropertyMetaType(this.app, prop);
 			if (strVal && (!metaType || metaType === 'text' || metaType === 'multitext')) {
 				void MarkdownRenderer.render(this.app, strVal, cellEl, entry.file.path, this);
@@ -633,8 +911,23 @@ export class NotionTableView extends BasesView {
 				void this.writeProperty(opts.file, opts.propName, value)
 					.then(() => opts.onWrite?.()),
 			setColor: (value, colorName) => this.setPinnedColor(value, colorName),
+			getOrder: () => this.getSelectOptionOrder(opts.propName),
+			setOrder: (order) => this.setSelectOptionOrder(opts.propName, order),
 			onClose: () => { this.selectEditor = null; },
 		});
+	}
+
+	/** Saved option order for a select/pill property (lowercased value keys). */
+	private getSelectOptionOrder(propName: string): string[] {
+		const map = this.config.get('selectOrders') as Record<string, string[]> | undefined;
+		const order = map?.[propName];
+		return Array.isArray(order) ? order.map((s) => String(s).toLowerCase()) : [];
+	}
+
+	/** Persist a select/pill property's option order, keyed by its bare name. */
+	private setSelectOptionOrder(propName: string, order: string[]): void {
+		const current = this.config.get('selectOrders') as Record<string, string[]> || {};
+		this.config.set('selectOrders', { ...current, [propName]: order });
 	}
 
 	/**
