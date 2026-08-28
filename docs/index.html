@@ -159,8 +159,42 @@
 
 			<details class="release" open>
 				<summary>
-					<span class="ver">1.0.5</span>
+					<span class="ver">1.0.6</span>
 					<span class="tag">Latest</span>
+				</summary>
+				<div class="body">
+					<ul>
+						<li>Fixed: text and multitext cells truncated at the first
+							<code>/</code> — pill/path values are meant to show only their last
+							path segment, but that stripping was applied to every rendered
+							value, so ordinary text containing a <code>/</code> (a fraction, a
+							date, "km/h", …) got cut short. Now applied only to genuine
+							link/file values.</li>
+						<li>Fixed: colors were a fixed Notion light/dark palette instead of
+							the active Obsidian theme. Text, borders, hover wash, and the
+							view's own background now come from Obsidian's theme variables,
+							so a custom theme — not just light/dark mode — is followed
+							everywhere.</li>
+						<li>Fixed: rows could look misaligned because Markdown-rendered
+							cells carry a paragraph's own margin while plain cells (numbers,
+							dates, pills) don't; that margin is now reset so every cell lines
+							up on the same baseline.</li>
+						<li>Added: press-and-hold a column header and drag to reorder
+							columns; click a header to sort by it (ascending → descending →
+							off).</li>
+						<li>Added: right-click a header for <strong>Change icon</strong> (a
+							searchable icon picker) and <strong>Change property name</strong>,
+							alongside the existing wrap/color toggles.</li>
+						<li>Added: the pill select editor's option list can be
+							drag-reordered; sorting a select/pill column now follows that
+							saved order instead of alphabetical.</li>
+					</ul>
+				</div>
+			</details>
+
+			<details class="release">
+				<summary>
+					<span class="ver">1.0.5</span>
 				</summary>
 				<div class="body">
 					<p>Housekeeping only — no functional change to the plugin.</p>
