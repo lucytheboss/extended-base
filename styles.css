@@ -17,26 +17,24 @@
 	font-size: 14px;
 	color: var(--ntn-text);
 	background: var(--background-primary);
-	/* .ntn-root has to be a genuinely bounded, internally-scrolling box for
-	   the sticky header (below) to have anything to stick against — sticky
-	   positioning binds to the nearest ancestor whose overflow isn't
-	   visible/clip, REGARDLESS of whether that ancestor is actually tall
-	   enough to scroll. Since this already sets overflow: auto (needed for
-	   wide tables), .ntn-root claims that role either way; the only
-	   question is whether it's tall enough to ever move. height: 100%
-	   alone turned out not to be (Bases' own container apparently doesn't
-	   hand this a definite height to inherit — confirmed by testing: the
-	   header still scrolled away with the body), which just made this an
-	   inert scroll container that never scrolls, so the header sat still
-	   with nothing to pin against. max-height: 100vh is a hard fallback
-	   that guarantees a bound regardless of the ancestor chain — content
-	   taller than one viewport now always scrolls inside .ntn-root itself.
-	   Trade-off: in a narrow split pane shorter than the viewport, this can
-	   overshoot the pane's actual height; height: 100% still wins first
-	   whenever the ancestor *does* supply a real one. */
-	overflow: auto;
-	height: 100%;
-	max-height: 100vh;
+	/* Bases' own container already scrolls vertically on its own — that's
+	   always been true, forcing a second bounded scroll onto .ntn-root
+	   (an earlier attempt: height: 100% / max-height: 100vh) just produced
+	   two independent scroll regions nested in each other, which is worse
+	   than the original bug. The actual fix is to keep .ntn-root OUT of
+	   the scroll-container business entirely for the vertical axis, so
+	   sticky positioning bubbles up past it to that real outer scroller.
+	   overflow-x here is still needed so a wide table scrolls sideways
+	   instead of crushing every column — but leaving overflow-y at its
+	   default 'visible' next to a non-visible overflow-x gets silently
+	   upgraded to 'auto' by browsers (CSS Overflow §3), which would make
+	   .ntn-root a scroll container again regardless. overflow-y: clip
+	   sidesteps that: it's an explicit non-visible value so the upgrade
+	   rule doesn't fire, but unlike auto/scroll it doesn't register as a
+	   "scrolling box", so sticky's search for its containing scroller
+	   keeps going past .ntn-root to the ancestor that actually scrolls. */
+	overflow-x: auto;
+	overflow-y: clip;
 	padding-bottom: 24px;
 }
 
