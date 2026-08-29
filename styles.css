@@ -17,7 +17,26 @@
 	font-size: 14px;
 	color: var(--ntn-text);
 	background: var(--background-primary);
-	overflow-x: auto;
+	/* Bounded height + scroll on both axes makes .ntn-root itself the
+	   scrolling viewport the sticky header (below) pins against. In the
+	   full Bases pane the ancestor chain gives this a real height, so it
+	   scrolls internally; in an unbounded context (an embed, reading/edit
+	   mode) the percentage height resolves to auto and this quietly has no
+	   effect, same as before. Both axes are set explicitly — leaving
+	   overflow-y at its default 'visible' next to a non-visible overflow-x
+	   gets silently upgraded to 'auto' by browsers anyway (CSS Overflow §3),
+	   which would make .ntn-root the sticky container without giving it an
+	   actual scrollport — the header would just float mid-page instead of
+	   pinning to the top of the real scroll area. height and flex are both
+	   set to fill the parent's real height either way it happens to be
+	   laid out (a percentage-height ancestor chain, or a flex column with
+	   the Bases toolbar above it) — min-height: 0 keeps the flex case from
+	   refusing to shrink below the table's natural content height, which
+	   would otherwise stop it from scrolling internally at all. */
+	overflow: auto;
+	height: 100%;
+	flex: 1 1 auto;
+	min-height: 0;
 	padding-bottom: 24px;
 }
 
@@ -54,7 +73,14 @@
 	border-bottom: 1px solid var(--ntn-border);
 	-webkit-user-select: none;
 	user-select: none;
-	position: relative;
+	/* Sticky (not just relative, which it also doubles as — the resizer
+	   handle and the drag/drop indicators still position against this)
+	   pins the header to the top of .ntn-root's own scrollport as the body
+	   scrolls underneath it. Applied per-cell rather than on <thead>, since
+	   sticky on thead itself isn't reliably supported. */
+	position: sticky;
+	top: 0;
+	z-index: 2;
 }
 
 /* Some themes (and Obsidian's core .markdown-rendered rules) fill table
@@ -65,9 +91,17 @@
 .ntn-root .ntn-table thead,
 .ntn-root.ntn-root .ntn-table.ntn-table thead tr,
 .ntn-root.ntn-root .ntn-table.ntn-table tbody tr,
-.ntn-root.ntn-root .ntn-th.ntn-th,
 .ntn-root.ntn-root .ntn-td.ntn-td {
 	background: transparent;
+}
+
+/* The header cells are sticky (see .ntn-root .ntn-th above), so — unlike
+   the rest of the table — they need an opaque background: rows scrolling
+   underneath a transparent sticky header would show through it. Matches
+   .ntn-root's own background, so this looks identical to "transparent over
+   the page" until the table is actually scrolled. */
+.ntn-root.ntn-root .ntn-th.ntn-th {
+	background: var(--background-primary);
 }
 
 /* Lock header/cell horizontal padding so reading mode matches edit mode. In
@@ -959,10 +993,6 @@
    outside this plugin's view, so it ships as opt-in rather than being
    injected document-wide. See the README ("Optional: Notion-style
    toolbar"). */
-
-.ntn-th {
-	position: relative;
-}
 
 /* Set by the resize handle; falls back to auto sizing until a column has
    actually been dragged. */
