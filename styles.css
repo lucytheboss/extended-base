@@ -53,7 +53,16 @@
    alone — don't simplify it back or reach for !important (community CSS
    lint); if a theme still wins, add MORE specificity. */
 .ntn-root .ntn-table.ntn-table {
-	border-collapse: collapse;
+	/* Chromium/WebKit simply ignore `position: sticky` on table cells when
+	   the table uses collapsed borders — the header cells would render
+	   sticky's own CSS fine but never actually stick. `separate` (with zero
+	   spacing, so cells still touch) keeps the same look while letting the
+	   sticky header (see .ntn-th) actually pin. No double borders result:
+	   every bordered edge in this stylesheet is drawn from exactly one side
+	   (border-bottom only, border-right only), never both cells sharing an
+	   edge. */
+	border-collapse: separate;
+	border-spacing: 0;
 	display: table;
 	table-layout: auto;
 	width: max-content;
