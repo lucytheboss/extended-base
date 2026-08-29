@@ -17,26 +17,26 @@
 	font-size: 14px;
 	color: var(--ntn-text);
 	background: var(--background-primary);
-	/* Bounded height + scroll on both axes makes .ntn-root itself the
-	   scrolling viewport the sticky header (below) pins against. In the
-	   full Bases pane the ancestor chain gives this a real height, so it
-	   scrolls internally; in an unbounded context (an embed, reading/edit
-	   mode) the percentage height resolves to auto and this quietly has no
-	   effect, same as before. Both axes are set explicitly — leaving
-	   overflow-y at its default 'visible' next to a non-visible overflow-x
-	   gets silently upgraded to 'auto' by browsers anyway (CSS Overflow §3),
-	   which would make .ntn-root the sticky container without giving it an
-	   actual scrollport — the header would just float mid-page instead of
-	   pinning to the top of the real scroll area. height and flex are both
-	   set to fill the parent's real height either way it happens to be
-	   laid out (a percentage-height ancestor chain, or a flex column with
-	   the Bases toolbar above it) — min-height: 0 keeps the flex case from
-	   refusing to shrink below the table's natural content height, which
-	   would otherwise stop it from scrolling internally at all. */
+	/* .ntn-root has to be a genuinely bounded, internally-scrolling box for
+	   the sticky header (below) to have anything to stick against — sticky
+	   positioning binds to the nearest ancestor whose overflow isn't
+	   visible/clip, REGARDLESS of whether that ancestor is actually tall
+	   enough to scroll. Since this already sets overflow: auto (needed for
+	   wide tables), .ntn-root claims that role either way; the only
+	   question is whether it's tall enough to ever move. height: 100%
+	   alone turned out not to be (Bases' own container apparently doesn't
+	   hand this a definite height to inherit — confirmed by testing: the
+	   header still scrolled away with the body), which just made this an
+	   inert scroll container that never scrolls, so the header sat still
+	   with nothing to pin against. max-height: 100vh is a hard fallback
+	   that guarantees a bound regardless of the ancestor chain — content
+	   taller than one viewport now always scrolls inside .ntn-root itself.
+	   Trade-off: in a narrow split pane shorter than the viewport, this can
+	   overshoot the pane's actual height; height: 100% still wins first
+	   whenever the ancestor *does* supply a real one. */
 	overflow: auto;
 	height: 100%;
-	flex: 1 1 auto;
-	min-height: 0;
+	max-height: 100vh;
 	padding-bottom: 24px;
 }
 
