@@ -17,24 +17,25 @@
 	font-size: 14px;
 	color: var(--ntn-text);
 	background: var(--background-primary);
-	/* Bases' own container already scrolls vertically on its own — that's
-	   always been true, forcing a second bounded scroll onto .ntn-root
-	   (an earlier attempt: height: 100% / max-height: 100vh) just produced
-	   two independent scroll regions nested in each other, which is worse
-	   than the original bug. The actual fix is to keep .ntn-root OUT of
-	   the scroll-container business entirely for the vertical axis, so
-	   sticky positioning bubbles up past it to that real outer scroller.
-	   overflow-x here is still needed so a wide table scrolls sideways
-	   instead of crushing every column — but leaving overflow-y at its
-	   default 'visible' next to a non-visible overflow-x gets silently
-	   upgraded to 'auto' by browsers (CSS Overflow §3), which would make
-	   .ntn-root a scroll container again regardless. overflow-y: clip
-	   sidesteps that: it's an explicit non-visible value so the upgrade
-	   rule doesn't fire, but unlike auto/scroll it doesn't register as a
-	   "scrolling box", so sticky's search for its containing scroller
-	   keeps going past .ntn-root to the ancestor that actually scrolls. */
-	overflow-x: auto;
-	overflow-y: clip;
+	/* Sticky ought to pin against Bases' own outer scroller, so the header
+	   scrolls with the rest of the pane right up until it hits the true
+	   top of the screen — that was tried (overflow-y: clip, letting
+	   .ntn-root defer to whatever ancestor really scrolls) and the header
+	   never stuck at all, which points at something further up that chain
+	   blocking sticky outright (a transform/contain, or that ancestor not
+	   truly being a scroll container) rather than at .ntn-root. Diagnosing
+	   that means reading Bases' own (private) CSS, which isn't available
+	   here — so .ntn-root instead becomes its own genuinely bounded,
+	   scrolling box, independent of whatever the outer pane does. Sticky
+	   then reliably pins against THIS scroll, at the cost of a second,
+	   separate scroll region rather than one unified with the rest of the
+	   screen. height: 100% is a no-op unless Bases' container happens to
+	   hand this a definite height (harmless either way); max-height: 100vh
+	   is what actually guarantees a bound, since nothing else here can be
+	   relied on to provide one. */
+	overflow: auto;
+	height: 100%;
+	max-height: 100vh;
 	padding-bottom: 24px;
 }
 
